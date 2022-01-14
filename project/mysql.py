@@ -1,3 +1,4 @@
+from dataclasses import replace
 import json
 import sys
 import pymysql
@@ -160,6 +161,33 @@ class mysql_m():
 
     # Добавить инструменты дял работы с внешними ключами и связями таблицы
 
+    def insert_into(self, table, data):
+        self.Connect()
+        self.cur.execute("INSERT INTO test_2 (age, var) VALUES (45, 'po'), (87, 'op')")
+        self.con.commit()
+
+        columns = ', '.join("`" + str(x) + "`" for x in data.keys())
+        values = ""
+        for key in data.keys():
+            values += ', '.join("("+str(x)+")" for x in data[key])
+        sql = "INSERT INTO %s ( %s ) VALUES %s;" % (table, columns, values)
+        print(sql)
+        
+
+
+    def get_table(self, table):
+        self.Connect()
+        tab = pd.read_sql("SELECT * FROM %s"%(table), self.con)
+        ans = tab.to_dict(orient='list')
+        return ans
+
+    
+
+
+
+
+        
+
     
 
 
@@ -169,7 +197,8 @@ class mysql_m():
 
 
 if __name__ == "__main__":
+    data = {'age': [45,56,8], 'var': ['a','b','c']}
     sql = mysql_m()
-    sql.delete_table("test_1")
-    print(sql.get_tables())
+    #sql.insert_into("test_2", data)
+    print(sql.get_table("test_2"))
     
