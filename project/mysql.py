@@ -3,6 +3,7 @@ import json
 import sys
 import pymysql
 import pandas as pd
+import numpy as np
 
 sys.path.insert(1, './')
 
@@ -161,18 +162,15 @@ class mysql_m():
 
     # Добавить инструменты дял работы с внешними ключами и связями таблицы
 
-    def insert_into(self, table, data):
+    def insert_into(self, table, data_):
         self.Connect()
-        self.cur.execute("INSERT INTO test_2 (age, var) VALUES (45, 'po'), (87, 'op')")
-        self.con.commit()
-
-        columns = ', '.join("`" + str(x) + "`" for x in data.keys())
-        values = ""
-        for key in data.keys():
-            values += ', '.join("("+str(x)+")" for x in data[key])
+        # Конструируем 
+        columns = ', '.join("`" + str(x) + "`" for x in data_.keys())
+        vals = np.array(list(data_.values())).transpose()
+        values = ", ".join("("+", ".join(val[i] if not str(val[i]).isidentifier() else "'"+val[i]+"'" for i in range(len(val)))+")" for val in vals)
         sql = "INSERT INTO %s ( %s ) VALUES %s;" % (table, columns, values)
-        print(sql)
-        
+        self.cur.execute(sql)
+        self.con.commit()
 
 
     def get_table(self, table):
@@ -197,8 +195,12 @@ class mysql_m():
 
 
 if __name__ == "__main__":
-    data = {'age': [45,56,8], 'var': ['a','b','c']}
+    
+    data = {'age': [4.5,0.56,8], 'var': ['a','b','c']}
     sql = mysql_m()
-    #sql.insert_into("test_2", data)
+    
+    print(sql.get_table("test_2"))
+    print()
+    sql.insert_into("test_2", data)
     print(sql.get_table("test_2"))
     
