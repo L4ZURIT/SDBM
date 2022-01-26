@@ -1,4 +1,4 @@
-from dataclasses import replace
+import itertools
 import json
 import sys
 import pymysql
@@ -29,7 +29,7 @@ class mysql_m():
             self.secret = content["secret"]
             self.db = content["db"]
 
-    # Проверка заполнения информации о подключаемой базе
+    # Проверка наличия информации о подключаемой базе в конфигурационных файлах приложения 
     def CheckCfg(self):
         if (self.host == '' or
             self.user == '' or
@@ -58,23 +58,28 @@ class mysql_m():
 
         pass
 
+    # позволяет передать собственный запрос и получить результат
+    def request(self, req:str):
+        self.Connect()
+        try:
+            self.cur.execute(str(req))
+            self.con.commit()
+        except Exception as ex:
+            return ex
+        return str(self.cur.fetchall())
 
-    def get_tables(self):
+
+    # возвращает кортеж с информацией (кортеж: название + тип таблицы) об отношениях в базе. По желанию можно дополнить запрос в параметре extra
+    def get_tables(self, extra = ""):
         self.Connect()
         self.cur.execute("""
             SHOW FULL TABLES
-        """)
+        """ + extra)
         return self.cur.fetchall()
 
-
-    def get_tables_like(self, what):
-        self.Connect()
-        self.cur.execute("""
-            SHOW FULL TABLES LIKE '{what_}'
-        """.format(what_ = what))
-        return self.cur.fetchall()
-
-
+    # создает новую таблицу, нужно указать новое название с учетом, что оно не должно быть идентично с каким-либо названием таблицы из базы
+    # в параметре columns необходимо передать словарь с уникальными названиями полей в качестве ключей и указанием их типов в качестве значений
+    # если вы не готовы внести информацию о полях отношения, функция по умолчанию определит идентификатор, необходимо учитывать это при дальнейшей модификации отношения
     def new_table(self, t_name, columns = {"id":"INT AUTO_INCREMENT PRIMARY KEY"}):
         self.Connect()
         col_t = "("
@@ -89,7 +94,7 @@ class mysql_m():
             return e
         self.con.commit()
 
-
+    # переименовывает отношение
     def rename_table(self, old_name, new_name):
         self.Connect()
         try:
@@ -101,6 +106,8 @@ class mysql_m():
             return e
         self.con.commit()
 
+
+    # удаляет отношение
     def delete_table(self, table):
         self.Connect()
         try:
@@ -112,7 +119,7 @@ class mysql_m():
             return e
         self.con.commit()
 
-
+    # удаляет множество кортежей отношения
     def clear_table(self, table):
         self.Connect()
         try:
@@ -124,7 +131,7 @@ class mysql_m():
             return e
         self.con.commit()
 
-        
+    #  добавляет новое поле отношения 
     def new_column(self, new_column, table_name):
         self.Connect()
         try:
@@ -136,6 +143,7 @@ class mysql_m():
             return e
         self.con.commit()
 
+    # удаляет необходимое поле отношения
     def delete_column(self, column, table):
         self.Connect()
         try:
@@ -147,6 +155,7 @@ class mysql_m():
             return e
         self.con.commit()
 
+    # переименовывает имеющиесе поле отношения
     def rename_column(self, old_column, new_column, table):
         self.Connect()
         try:
@@ -162,17 +171,23 @@ class mysql_m():
 
     # Добавить инструменты дял работы с внешними ключами и связями таблицы
 
-    def insert_into(self, table, data_):
+
+
+    # позволяет добавить новые множества кортежей в имеющиесе отношение
+    # необходимо в качестве данных передавать словарь с именами полей в качестве ключей и списками значений в качестве значений словаря
+    # в любом случае необходимо передавать данные именно указанным выше способом, т.е. даже если у вас всего один элемент, необходимо обернуть его в список
+    # в случае если данные списки будут обладать разной длинной, недостающие значения заменятся на None
+    def insert_into(self, table, data):
         self.Connect()
-        # Конструируем 
-        columns = ', '.join("`" + str(x) + "`" for x in data_.keys())
-        vals = np.array(list(data_.values())).transpose()
-        values = ", ".join("("+", ".join(val[i] if not str(val[i]).isidentifier() else "'"+val[i]+"'" for i in range(len(val)))+")" for val in vals)
+        columns = ', '.join("`" + str(x) + "`" for x in data.keys())
+        vals = list(map(list, itertools.zip_longest(*data.values(), fillvalue=None)))
+        values = ", ".join("("+", ".join(str(val[i]) if type(val[i]) != str else "'"+val[i]+"'" for i in range(len(val)))+")" for val in vals)
         sql = "INSERT INTO %s ( %s ) VALUES %s;" % (table, columns, values)
         self.cur.execute(sql)
         self.con.commit()
 
 
+    # позволяет получить все отношение целиком
     def get_table(self, table):
         self.Connect()
         tab = pd.read_sql("SELECT * FROM %s"%(table), self.con)
@@ -196,11 +211,9 @@ class mysql_m():
 
 if __name__ == "__main__":
     
-    data = {'age': [4.5,0.56,8], 'var': ['a','b','c']}
+    data = {'age': [4.5,0.56,8], 'var': ['4.0','b','c']}
     sql = mysql_m()
-    
-    print(sql.get_table("test_2"))
-    print()
+
     sql.insert_into("test_2", data)
-    print(sql.get_table("test_2"))
-    
+    print(sql.get_tables())
+     
