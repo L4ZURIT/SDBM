@@ -1,6 +1,8 @@
 {
-    "host":"remotemysql.com",
-    "user":"OKm2FgXiqp",
-    "secret":"EOdoJvntQF",
-    "db":"OKm2FgXiqp"
+    "drivername": "mysql",
+   "host": "remotemysql.com",
+   "port": "3306",
+   "username": "OKm2FgXiqp",
+   "password": "EOdoJvntQF",
+   "database": "OKm2FgXiqp"
 }

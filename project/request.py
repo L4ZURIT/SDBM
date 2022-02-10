@@ -11,7 +11,6 @@ sys.path.insert(1, './')
 from project.mysql import mysql_m
 
 
-
 class Request():
 
     m_pb_up = "🠹"
@@ -42,7 +41,7 @@ class Request():
         self.sql:mysql_m = main.sql
 
 
-        # настройка интерфейса
+        # настройка интерфейса 
         self.write_ui(self.j_read())
         self.tw_story.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tw_story.horizontalHeader().setSectionResizeMode(QHeaderView.Fixed)
@@ -59,6 +58,7 @@ class Request():
         self.tw_story.resizeEvent = self.resize_columns
 
     
+    # Растягивает табличку истории запросов в нижнем групбоксе SQL
     def resize_columns(self, e):
         self.tw_story.setColumnWidth(0, (self.tw_story.width()-20) / self.tw_story.columnCount()*0.5)
         self.tw_story.setColumnWidth(1, (self.tw_story.width()-20) / self.tw_story.columnCount()*0.5)
@@ -66,6 +66,8 @@ class Request():
         self.tw_story.setColumnWidth(3, (self.tw_story.width()-20) / self.tw_story.columnCount()*0.5)
 
 
+
+    # Обновляет содержимое таблички истории запросов в нижнем групбоксе SQL
     def write_ui(self, diction:dict):
         self.tw_story.clearContents()
         count = len(diction["dates"])
@@ -77,12 +79,14 @@ class Request():
             self.tw_story.setItem(row, 3, QTableWidgetItem(diction["status"][row]))
         
 
-    def write_json(self, content):
+
+    # добавляет новые записи в историю запросов находящуюся в файле json
+    def write_json(self, content, req):
 
         diction = self.j_read()
 
         diction["dates"].append(str(datetime.now()))
-        diction["requests"].append(self.le_req.text())
+        diction["requests"].append(req)
         diction["answers"].append(str(content))
         if  (type(content) == pymysql.err.ProgrammingError or
         type(content) == pymysql.err.DataError or
@@ -97,6 +101,7 @@ class Request():
         self.write_ui(diction)
 
 
+    # Полностью очищает json файл
     def clear_json(self):
         req = {
             "dates":[], 
@@ -108,6 +113,7 @@ class Request():
         self.write_ui(req)
 
 
+    # переключает виджет запросов с полоски на область и обратно
     def change_req_widget(self):
         if self.pb_up_down.text() == self.m_pb_up:
             self.pb_up_down.setText(self.m_pb_down)
@@ -121,6 +127,7 @@ class Request():
             self.te_req.hide()
 
 
+    # Передает запрос из активного контейнера запросов в метод осуществления запроса 
     def create_req(self):
         if self.pb_up_down.text() == self.m_pb_up:
             self.go(self.le_req.text())
@@ -128,15 +135,17 @@ class Request():
             self.go(self.te_req.toPlainText())
 
 
-    
-
+    # Метод реализующий запрос к бд, с записью данного запроса в историю и обновляющего информацию в виджетах ручных запросов
+    # Таким образом даже автоматические запросы реализуются через даннный метод, чтобы можно было вести их учет и посмотреть подробности в окне ручных запросов
     def go(self, req):
         self.te_result.clear()
         result = self.sql.request(req)
         self.te_result.setText(str(result))
-        self.write_json(result)
+        self.write_json(result, req)
         return result
 
+
+    # устанавливает данные запроса из истории (состав запроса в его поле и ответ в поле ответа соответствено)
     def get_from_story(self, row, col):
         diction = Request.j_read()
         self.le_req.setText(diction["requests"][row])

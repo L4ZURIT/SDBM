@@ -11,6 +11,15 @@ sys.path.insert(1, './')
 
 # Класс предназначен для подключения к сервисам Mysql и работы с таблицами в этой базе
 class mysql_m():
+
+
+    @staticmethod
+    def j_read() -> dict:
+        with open("data/database.json") as json_file:
+            data = json.load(json_file)
+        return data
+
+
     def __init__(self, send = True) -> None:
         self.Read()
         self.Connect()
@@ -30,9 +39,9 @@ class mysql_m():
         with open("data/database.json", 'r', encoding='utf-8') as f:
             content = json.load(f)
             self.host = content["host"]
-            self.user = content["user"]
-            self.secret = content["secret"]
-            self.db = content["db"]
+            self.user = content["username"]
+            self.secret = content["password"]
+            self.db = content["database"]
 
     # Проверка наличия информации о подключаемой базе в конфигурационных файлах приложения 
     def CheckCfg(self):
@@ -208,6 +217,30 @@ class mysql_m():
         else:
             return req
 
+    def delete_row(self, table, indexes:list, values:list):
+
+        if len(indexes) != len(values):
+            raise NameError(" lengths of lists unequal")
+
+        self.Connect()
+
+        req = "DELETE FROM %s WHERE"%(table)
+
+        for i, v in zip(indexes, values):
+            req += " %s = %s AND"%(i, v)
+
+        req = req[:-3]
+
+        if self.send:
+            try:
+                self.cur.execute(req)
+            except Exception as e:
+                print(e)
+                return e
+            self.con.commit()
+        else:
+            return req
+
         
 
     # Добавить инструменты для работы с именоваными и неимнованными ограничениями уникальности
@@ -220,7 +253,7 @@ class mysql_m():
     # необходимо в качестве данных передавать словарь с именами полей в качестве ключей и списками значений в качестве значений словаря
     # в любом случае необходимо передавать данные именно указанным выше способом, т.е. даже если у вас всего один элемент, необходимо обернуть его в список
     # в случае если данные списки будут обладать разной длинной, недостающие значения заменятся на None
-    def insert_into(self, table, data):
+    def insert_into(self, table, data:dict):
         self.Connect()
         columns = ', '.join("`" + str(x) + "`" for x in data.keys())
         vals = list(map(list, itertools.zip_longest(*data.values(), fillvalue=None)))
@@ -255,30 +288,47 @@ class mysql_m():
         else:
             return req
 
+
+    # позволяет получить все отношение целиком
+    def find_primary_key(self, table):
+        self.Connect()
+
+        req = "SELECT C.COLUMN_NAME FROM information_schema.table_constraints AS pk INNER JOIN information_schema.KEY_COLUMN_USAGE AS C ON C.TABLE_NAME = pk.TABLE_NAME AND C.CONSTRAINT_NAME = pk.CONSTRAINT_NAME AND C.TABLE_SCHEMA = pk.TABLE_SCHEMA WHERE  pk.TABLE_NAME  = '{table_}' AND pk.TABLE_SCHEMA = '{database}' AND pk.CONSTRAINT_TYPE = 'PRIMARY KEY'".format(table_ = table, database = self.db)
+
+        if self.send:
+            try:
+                self.cur.execute(req)
+            except Exception as e:
+                print(e)
+                return e
+            self.con.commit()
+        else:
+            return req
+
+
+    # позволяет получить все отношение целиком
+    def find(self, table, what):
+        self.Connect()
+
+        req = "SELECT C.COLUMN_NAME FROM information_schema.table_constraints AS pk INNER JOIN information_schema.KEY_COLUMN_USAGE AS C ON C.TABLE_NAME = pk.TABLE_NAME AND C.CONSTRAINT_NAME = pk.CONSTRAINT_NAME AND C.TABLE_SCHEMA = pk.TABLE_SCHEMA WHERE  pk.TABLE_NAME  = '{table_}' AND pk.TABLE_SCHEMA = '{database}' AND pk.CONSTRAINT_TYPE = '{type_}'".format(table_ = table, database = self.db, type_ = what)
+
+        if self.send:
+            try:
+                self.cur.execute(req)
+            except Exception as e:
+                print(e)
+                return e
+            self.con.commit()
+        else:
+            return req
+
+
         
-
-
-
-    
-
-
-
-
-        
-
-    
-
-
-
-    
-
 
 
 if __name__ == "__main__":
     
     data = {'age': [4.5,0.56,8], 'var': ['4.0','b','c']}
-    sql = mysql_m()
-
-    sql.insert_into("test_2", data)
-    print(sql.get_tables())
+    sql = mysql_m(False)
+    print(sql.delete_row("table", ["wdwd", 'iuiuiu'], ["87","78"]))
      
