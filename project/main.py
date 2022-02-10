@@ -5,7 +5,6 @@ import sys
 
 
 
-# ef
 
 sys.path.insert(1, './')
 from project.mysql import mysql_m
