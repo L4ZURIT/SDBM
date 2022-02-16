@@ -47,7 +47,6 @@ class mysql_m():
     def CheckCfg(self):
         if (self.host == '' or
             self.user == '' or
-            self.secret == '' or 
             self.db == ''):
             return False
         else:

@@ -1,8 +1,8 @@
 {
     "drivername": "mysql",
-   "host": "remotemysql.com",
+   "host": "localhost",
    "port": "3306",
-   "username": "OKm2FgXiqp",
-   "password": "EOdoJvntQF",
-   "database": "OKm2FgXiqp"
+   "username": "root",
+   "password": "",
+   "database": "test"
 }

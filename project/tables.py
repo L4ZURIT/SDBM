@@ -8,13 +8,11 @@ import pandas as pd
 from sqlalchemy import *
 from sqlalchemy.engine.url import URL
 from sqlalchemy.dialects import mysql
+from sqlalchemy.orm import Query
 
 sys.path.insert(1, './')
 from project.mysql import mysql_m
 from project.request import Request
-from sqlalchemy.orm import Query
-
-
 
 
 # взято с сайта https://question-it.com/questions/1490148/sqlalchemy-vyvesti-fakticheskij-zapros
@@ -118,11 +116,18 @@ class Tables():
         self.st = main.standart
         self.lw_tables:QListWidget = main.lw_tables
         self.tw_content:QTableWidget = main.tw_content
-        self.sb_rows:QSpinBox = main.sb_rows
         self.sql:mysql_m = main.sql
         self.req:Request = main.req
         self.table_name:str = None
         self.main:QMainWindow = main
+        self.cb_write_mode:QCheckBox = main.cb_write_mode
+        self.tb_content:QToolButton = main.tb_content
+        self.spl_content:QSplitter = main.spl_content
+        self.gb_properties:QGroupBox = main.gb_properties
+        self.pb_hide_settings:QPushButton = main.pb_hide_settings
+        self.pb_hide_properties:QPushButton = main.pb_hide_properties
+        self.pb_settings_apply:QPushButton = main.pb_settings_apply
+        self.cb_hide_row_indexes:QCheckBox = main.cb_hide_row_indexes
         # Инициализация SQLAlchemy
         self.engine = create_engine(URL.create(**mysql_m.j_read()))
         self.md = MetaData(bind=self.engine)
@@ -131,16 +136,23 @@ class Tables():
         # ---
         
         # Настройка интерфейса
+        self.spl_content.hide()
+        self.gb_properties.hide()
         self.TablesListInit()
+        self.TablesInterfaceInit()
 
         # ---
 
 
         # Связка сигналов
         self.lw_tables.itemDoubleClicked.connect(self.open_table)
+        self.pb_hide_properties.clicked.connect(self.gb_properties.hide)
+        self.pb_hide_settings.clicked.connect(self.spl_content.hide)
+        self.pb_settings_apply.clicked.connect(self.reload_content)
         # ---
 
         # Переопределение событий
+        
 
         # ---
         
@@ -150,6 +162,30 @@ class Tables():
         for table in tables:
             self.lw_tables.addItem(str(table[0]))
 
+    def TablesInterfaceInit(self):
+        menu = QMenu(self.tb_content)
+        act1 = menu.addAction("Настройки")
+        act2 = menu.addAction("Обновить данные")
+        act3 = menu.addAction("Отменить изменения")
+        act4 = menu.addAction("Свойства поля")
+
+        act1.triggered.connect(self.spl_content.show)
+        act2.triggered.connect(self.reload_content)
+        act3.triggered.connect(self.reload_content)
+        act4.triggered.connect(self.gb_properties.show)
+
+        self.tb_content.setPopupMode(QToolButton.InstantPopup)
+        self.tb_content.setMenu(menu)
+        
+
+    
+    def reload_content(self):
+        if self.table_name == None:
+            mes = QMessageBox.critical(self.main, "Ошибка обновления", "Нет выбранной таблицы для обновления")
+        else:
+            self.open_table(QListWidgetItem(self.table_name))
+
+
 
     def MethodForButton(self, button:ButtonForRow):
 
@@ -157,6 +193,7 @@ class Tables():
         r = self.get_row(button.index)
         alch_types = [self.alch_table.columns[h[k]] for k in range(len(h))]
         py_types = [self.alch_table.columns[h[l]].type.python_type for l in range(len(h))]
+        
 
         if button.state == 0: # удалить          
             req = self.alch_table.delete().where(
@@ -212,6 +249,10 @@ class Tables():
 
 
     def open_table(self, item:QListWidgetItem):
+
+        self.main.stack_main.setCurrentIndex(1)
+        
+
         self.tw_content.clear()
 
         # переключаем состояние методов менеджера sql на мгновенное выполнение
@@ -221,6 +262,8 @@ class Tables():
         # инициализируем содержимое выбранной таблицы сохраняя экземпляр SQLalchemy
         self.dict_table = self.sql.get_table(self.table_name)
         self.alch_table = Table(self.table_name, self.md, autoload_with=self.engine)
+
+        
         
 
         # Словарь значений отношения
@@ -229,47 +272,67 @@ class Tables():
 
 
         # Первоначальная настройка интерфейса таблицы с установлением количества колонок и их размером
-        self.tw_content.setRowCount(self.sb_rows.value())
-        self.tw_content.setColumnCount(len(keys)+1)
         self.tw_content.setHorizontalHeaderItem(0, QTableWidgetItem(""))
         self.tw_content.setColumnWidth(0, 32)
         self.tw_content.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
 
-        
-        # Здесь хотелось бы в дальнейшем усовершенствовать таблицу таким образом чтобы вводимые в ней виджеты отображались в соответсвии с типом данных
+        if self.cb_write_mode.isChecked():
+            
+            # Здесь хотелось бы в дальнейшем усовершенствовать таблицу таким образом чтобы вводимые в ней виджеты отображались в соответсвии с типом данных
 
-        # Устанавливаем содержимое таблицы с соответсвующими типами данных
-        # for col in range(len(keys)):
-        #     self.tw_content.setHorizontalHeaderItem(col+1, QTableWidgetItem(str(keys[col])))
-        #     for row in range(len(values[col])):
-        #         if self.alch_table.columns[keys[col]].type.python_type == date:
-        #             self.tw_content.setIndexWidget(self.tw_content.model().index(row, col+1), QDateEdit(date=values[col][row]))
-        #         elif self.alch_table.columns[keys[col]].type.python_type == time:
-        #             self.tw_content.setIndexWidget(self.tw_content.model().index(row, col+1), QTimeEdit(time=values[col][row]))
-        #         elif self.alch_table.columns[keys[col]].type.python_type == datetime:
-        #             self.tw_content.setIndexWidget(self.tw_content.model().index(row, col+1), QDateTimeEdit(datetime==values[col][row]))
-        #         else:
-        #             self.tw_content.setItem(row, col+1, QTableWidgetItem(str(values[col][row])))
+            # Устанавливаем содержимое таблицы с соответсвующими типами данных
+            # for col in range(len(keys)):
+            #     self.tw_content.setHorizontalHeaderItem(col+1, QTableWidgetItem(str(keys[col])))
+            #     for row in range(len(values[col])):
+            #         if self.alch_table.columns[keys[col]].type.python_type == date:
+            #             self.tw_content.setIndexWidget(self.tw_content.model().index(row, col+1), QDateEdit(date=values[col][row]))
+            #         elif self.alch_table.columns[keys[col]].type.python_type == time:
+            #             self.tw_content.setIndexWidget(self.tw_content.model().index(row, col+1), QTimeEdit(time=values[col][row]))
+            #         elif self.alch_table.columns[keys[col]].type.python_type == datetime:
+            #             self.tw_content.setIndexWidget(self.tw_content.model().index(row, col+1), QDateTimeEdit(datetime==values[col][row]))
+            #         else:
+            #             self.tw_content.setItem(row, col+1, QTableWidgetItem(str(values[col][row])))
 
-        for col in range(len(keys)):
-            self.tw_content.setHorizontalHeaderItem(col+1, QTableWidgetItem(str(keys[col])))
-            for row in range(len(values[col])):
-                self.tw_content.setItem(row, col+1, QTableWidgetItem(str(values[col][row])))
+            self.tw_content.setColumnCount(len(keys)+1)
+            self.tw_content.setRowCount(len(values[0])+1)
 
+            for col in range(len(keys)):
+                self.tw_content.setHorizontalHeaderItem(col+1, QTableWidgetItem(str(keys[col])))
+                for row in range(len(values[col])):
+                    self.tw_content.setItem(row, col+1, QTableWidgetItem(str(values[col][row])))
 
-        # Наполняем первый столбец интерактивными кнопками
-        for row in range(self.tw_content.rowCount()):
-            self.tw_content.setIndexWidget(self.tw_content.model().index(row, 0), ButtonForRow(self.initiate_status(row, len(values[0])), row, self.MethodForButton, self.tw_content.cellChanged))
+            # Наполняем первый столбец интерактивными кнопками
+            for row in range(self.tw_content.rowCount()):
+                self.tw_content.setIndexWidget(self.tw_content.model().index(row, 0), ButtonForRow(self.initiate_status(row, len(values[0])), row, self.MethodForButton, self.tw_content.cellChanged))
 
+            self.tw_content.setEditTriggers(QAbstractItemView.AllEditTriggers)
+
+        else:
+
+            self.tw_content.setColumnCount(len(keys))
+            self.tw_content.setRowCount(len(values[0]))
+
+            for col in range(len(keys)):
+                self.tw_content.setHorizontalHeaderItem(col, QTableWidgetItem(str(keys[col])))
+                for row in range(len(values[col])):
+                    self.tw_content.setItem(row, col, QTableWidgetItem(str(values[col][row])))
+
+            self.tw_content.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
         for row in range(self.tw_content.rowCount()):
             self.tw_content.showRow(row)
 
 
+        if self.cb_hide_row_indexes.isChecked():
+            self.tw_content.verticalHeader().hide()
+        else:
+            self.tw_content.verticalHeader().show()
+
+
         self.sql.SetSend(self.st)
 
+        
 
-    
 
 
 

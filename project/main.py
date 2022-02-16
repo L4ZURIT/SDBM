@@ -10,6 +10,7 @@ sys.path.insert(1, './')
 from project.mysql import mysql_m
 from project.request import Request
 from project.tables import Tables
+from project.indexes import Indexes
 
 
 class MainWindow(QMainWindow):
@@ -34,6 +35,7 @@ class MainWindow(QMainWindow):
         self.sql = mysql_m(self.standart)
         self.req = Request(self)
         self.tables_manager = Tables(self)
+        self.index_manager = Indexes(self)
         # ----
 
         # настройка интерфейса 
@@ -41,39 +43,17 @@ class MainWindow(QMainWindow):
         
         # ---
 
-
-
-
-
-        # self.split = QSplitter()
-        # self.split.addWidget(QListWidget())
-        # self.split.addWidget(QTextEdit())
-
-        # self.lo_for_split.addWidget(self.split)
-
-
-
+        # связка сигналов  
+        self.act_to_main.triggered.connect(self.to_main)
+        self.act_to_sql.triggered.connect(self.to_sql)
         
+        # ---
 
-    
-        
+    def to_main(self):
+        self.stack.setCurrentIndex(1)
 
-
-    #     self.menu = QMenu()
-    #     for i in range(5):
-    #       self.menu.addAction(str(i))
-
-    #     self.actions_table.setPopupMode(QToolButton.InstantPopup)
-    #     self.actions_table.setMenu(self.menu)
-
-        
-
-    # def cont(self, e):
-    #     context = QMenu(self)
-    #     context.addAction(QAction("test 1", self))
-    #     context.addAction(QAction("test 2", self))
-    #     context.addAction(QAction("test 3", self))
-    #     context.exec(e.globalPos())
+    def to_sql(self):
+        self.stack.setCurrentIndex(2)
         
 
         

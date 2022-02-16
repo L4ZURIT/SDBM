@@ -1,10 +1,25 @@
 tb_content
     Настройки
-    Фильтры
     Обновить данные
     Отменить изменения
     Свойства поля
 
+tb_table
+    Обзор
+    Структура
+    Поиск
+    Очистить 
+    Удалить
+
+
+    {
+    "drivername": "mysql",
+   "host": "remotemysql.com",
+   "port": "3306",
+   "username": "OKm2FgXiqp",
+   "password": "EOdoJvntQF",
+   "database": "OKm2FgXiqp"
+}
 
 
 
