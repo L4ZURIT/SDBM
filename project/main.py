@@ -6,11 +6,13 @@ import sys
 
 
 
+
 sys.path.insert(1, './')
 from project.mysql import mysql_m
 from project.request import Request
 from project.tables import Tables
 from project.indexes import Indexes
+from project.generator import Generator
 
 
 class MainWindow(QMainWindow):
@@ -36,6 +38,7 @@ class MainWindow(QMainWindow):
         self.req = Request(self)
         self.tables_manager = Tables(self)
         self.index_manager = Indexes(self)
+        self.generator_manager = Generator(self)
         # ----
 
         # настройка интерфейса 
