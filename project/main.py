@@ -31,7 +31,7 @@ class MainWindow(QMainWindow):
         self.statusBar().addWidget(self.status)
         self.progress.hide()
         self.status.hide()
-        # ---
+        # - - -
 
         # инициализация классов 
         self.sql = mysql_m(self.standart)
@@ -51,6 +51,10 @@ class MainWindow(QMainWindow):
         self.act_to_sql.triggered.connect(self.to_sql)
         
         # ---
+
+        #WARNING!!!!!
+        self.gb_SQL.hide()
+        #WARNING!!!!!
 
     def to_main(self):
         self.stack.setCurrentIndex(1)

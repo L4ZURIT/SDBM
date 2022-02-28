@@ -3,12 +3,22 @@
 class human():
     name:str
     rost:int
+
+    @staticmethod
+    def strike(text):
+        result = ''
+        for c in text:
+            result = result + c + '\u0336'
+        return result
+
     def __init__(self, name, rost) -> None:
         self.name = name
         self.rost = rost
         pass
     def poop(self):
         print("Я пукнул")
+
+    
 
 
 def hui(a:int, b:int) -> int:
@@ -21,7 +31,7 @@ def hui(a:int, b:int) -> int:
 def main():
     cadet:human = human("oleg", 145)
     cadet.poop()
-    print(cadet.name, cadet.rost)
+    print(cadet.strike("goggog"))
     pass
 
 

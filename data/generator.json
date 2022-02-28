@@ -1,7 +1,87 @@
 {
-
-    "names": {
-        "type": "str",
-        "values": ["sw", "wd"]
+    "<class 'int'>": {
+        "one_var_int": {
+            "name": "Одно значение",
+            "description": "Описание",
+            "var_list": null,
+            "edit": false,
+            "widget": null
+        },
+        "series_int": {
+            "name": "По порядку с шагом",
+            "description": "Описание",
+            "var_list": null,
+            "edit": false,
+            "widget": null
+        },
+        "reversed_series_int": {
+            "name": "В обратном порядке с шагом",
+            "description": "Описание",
+            "var_list": null,
+            "edit": false,
+            "widget": null
+        },
+        "random_int": {
+            "name": "Случайное число",
+            "description": "Описание",
+            "var_list": null,
+            "edit": false,
+            "widget": null
+        }
+    },
+    "<class 'float'>": {
+        "one_var_float": {
+            "name": "Одно значение",
+            "description": "Описание",
+            "var_list": null,
+            "edit": false,
+            "widget": null
+        },
+        "series_float": {
+            "name": "По порядку с шагом",
+            "description": "Описание",
+            "var_list": null,
+            "edit": false,
+            "widget": null
+        },
+        "reversed_series_float": {
+            "name": "В обратном порядке с шагом",
+            "description": "Описание",
+            "var_list": null,
+            "edit": false,
+            "widget": null
+        },
+        "random_float": {
+            "name": "Случайное число",
+            "description": "Описание",
+            "var_list": null,
+            "edit": false,
+            "widget": null
+        }
+    },
+    "<class 'str'>": {
+        "fio_str": {
+            "name": "ФИО",
+            "description": "Описание",
+            "var_list": null,
+            "edit": false,
+            "widget": "a"
+        },
+        "job_str": {
+            "name": "Профессия",
+            "description": "Описание",
+            "var_list": null,
+            "edit": false,
+            "widget": null
+        }
+    },
+    "<class 'datetime.datetime'>": {
+        "random_dt": {
+            "name": "Случайная дата",
+            "description": "Описание",
+            "var_list": null,
+            "edit": false,
+            "widget": null
+        }
     }
 }
