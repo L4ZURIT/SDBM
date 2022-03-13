@@ -65,7 +65,7 @@
             "description": "Описание",
             "var_list": null,
             "edit": false,
-            "widget": "a"
+            "widget": "FIO"
         },
         "job_str": {
             "name": "Профессия",

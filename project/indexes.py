@@ -9,6 +9,10 @@ sys.path.insert(1, './')
 from project.mysql import mysql_m
 from project.request import Request
 
+
+
+# Данные классы должны были использоваться для продвинутого редактирования свойств полей, но пока разработка этого механизма отложена и появится в следующих обновлениях
+"""
 class CustomComboBox(QComboBox):
     def __init__(self, tw, text, row, col) -> None:
         super().__init__()
@@ -82,16 +86,14 @@ class DefaultComboBox(CustomComboBox):
         ])
         self.setCurrentText(text)
 
-       
-
-        
-
+"""      
 
 class Indexes():
     def __init__(self, main:QMainWindow):
         # Переменные 
         self.main:QMainWindow = main
         self.tw_indexes:QTableWidget = main.tw_indexes
+        # reinstall
         self.sql:mysql_m = main.sql
         self.table_name:str = None
         self.alch_table:Table = None
@@ -103,7 +105,6 @@ class Indexes():
         # - - -
 
         # Связка сигналов 
-        self.main.lw_tables.itemDoubleClicked.connect(self.open_table)
         #self.tw_indexes.cellChanged.connect(self.edit)
 
         # - - - 
@@ -117,52 +118,62 @@ class Indexes():
 
 
 
-    def open_table(self, item:QListWidgetItem):
+    def open_table(self, item:QListWidgetItem, alch_table):
 
+        # Блокируем редактирование, чтобы свойства можно было только просматривать
         self.tw_indexes.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
         self.tw_indexes.setRowCount(0)
 
+
+        # Рудимент, который в будущем необходимо вырезать и заменить использующийся модуль на более продвинутый, например как уже используется SQLAlchemy
+        # reinstall
         self.sql.SetSend(True)
 
         self.table_name = item.text()
 
-        self.alch_table = self.main.tables_manager.alch_table
+        # Инициализация класса таблицы SQLAlchemy
+        self.alch_table = alch_table
 
-
+        # reinstall
         keys = list(self.sql.get_table(self.table_name).keys())
 
         self.tw_indexes.setRowCount(len(keys))
 
-        for row in range(len(keys)):
-            self.tw_indexes.setItem(row, 0, QTableWidgetItem(keys[row]))
+        
 
 
         # Ждет своего часа когда у приложения появится функция редактирования атрибутов
-        # for row in range(len(keys)):
-        #     self.tw_indexes.setIndexWidget(
-        #         self.tw_indexes.model().index(row, 2), 
-        #         DataTypeComboBox(
-        #             self.tw_indexes,
-        #             str(self.alch_table.columns[keys[row]].type), 
-        #             row, 
-        #             2
-        #             ))
-
-        # for row in range(len(keys)):
-        #     self.tw_indexes.setIndexWidget(
-        #         self.tw_indexes.model().index(row, 3), 
-        #         DefaultComboBox(
-        #             self.tw_indexes,
-        #             str(self.alch_table.columns[keys[row]].default), 
-        #             row, 
-        #             2
-        #             ))
-            
+        """
+        for row in range(len(keys)):
+            self.tw_indexes.setIndexWidget(
+                self.tw_indexes.model().index(row, 2), 
+                DataTypeComboBox(
+                    self.tw_indexes,
+                    str(self.alch_table.columns[keys[row]].type), 
+                    row, 
+                    2
+                    ))
 
         for row in range(len(keys)):
-            self.tw_indexes.setItem(row, 1, QTableWidgetItem(str(self.alch_table.columns[keys[row]].type)))
+            self.tw_indexes.setIndexWidget(
+                self.tw_indexes.model().index(row, 3), 
+                DefaultComboBox(
+                    self.tw_indexes,
+                    str(self.alch_table.columns[keys[row]].default), 
+                    row, 
+                    2
+                    ))
 
+                    """
+
+        # Заполнение свойств полей в виджет отображения 
+
+        for row in range(len(keys)):
+            self.tw_indexes.setItem(row, 0, QTableWidgetItem(keys[row]))
+            
+        for row in range(len(keys)):
+            self.tw_indexes.setItem(row, 1, QTableWidgetItem(str(self.alch_table.columns[keys[row]].type)))
 
         for row in range(len(keys)):
             self.tw_indexes.setItem(row, 2, QTableWidgetItem(str(self.alch_table.columns[keys[row]].default)))
@@ -185,9 +196,3 @@ class Indexes():
         for row in range(len(keys)):
             self.tw_indexes.setItem(row, 8, QTableWidgetItem(str([k for k in self.alch_table.columns[keys[row]].constraints])))
         
-
-        
-
-        
-
-    

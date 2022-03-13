@@ -16,6 +16,7 @@ from project.request import Request
 
 
 # взято с сайта https://question-it.com/questions/1490148/sqlalchemy-vyvesti-fakticheskij-zapros
+# специальный метод конструктора выражений правильно работающий с датой и временем (НАДО ГРАМОТНО ОФОРМИТЬ)
 def render_query(statement, dialect=None):
     """
     Generate an SQL expression string with bound parameters rendered inline
@@ -128,12 +129,7 @@ class Tables():
         self.pb_hide_properties:QPushButton = main.pb_hide_properties
         self.pb_settings_apply:QPushButton = main.pb_settings_apply
         self.cb_hide_row_indexes:QCheckBox = main.cb_hide_row_indexes
-        # Инициализация SQLAlchemy
-        self.engine = create_engine(URL.create(**mysql_m.j_read()))
-        self.md = MetaData(bind=self.engine)
-        self.alch_table:Table = None
-        self.dict_table:dict = None
-        # ---
+        
         
         # Настройка интерфейса
         self.spl_content.hide()
@@ -145,7 +141,7 @@ class Tables():
 
 
         # Связка сигналов
-        self.lw_tables.itemDoubleClicked.connect(self.open_table)
+        
         self.pb_hide_properties.clicked.connect(self.gb_properties.hide)
         self.pb_hide_settings.clicked.connect(self.spl_content.hide)
         self.pb_settings_apply.clicked.connect(self.reload_content)
@@ -158,6 +154,7 @@ class Tables():
         
 
     def TablesListInit(self):
+        # reinstall
         tables = self.sql.request(self.sql.get_tables())
         for table in tables:
             self.lw_tables.addItem(str(table[0]))
@@ -183,7 +180,7 @@ class Tables():
         if self.table_name == None:
             mes = QMessageBox.critical(self.main, "Ошибка обновления", "Нет выбранной таблицы для обновления")
         else:
-            self.open_table(QListWidgetItem(self.table_name))
+            self.open_table(QListWidgetItem(self.table_name), self.alch_table)
 
 
 
@@ -191,8 +188,6 @@ class Tables():
 
         h = self.get_header()
         r = self.get_row(button.index)
-        alch_types = [self.alch_table.columns[h[k]] for k in range(len(h))]
-        py_types = [self.alch_table.columns[h[l]].type.python_type for l in range(len(h))]
         
 
         if button.state == 0: # удалить          
@@ -225,7 +220,7 @@ class Tables():
         except ValueError:
             mes = QMessageBox.critical(self.main, "aa", "ss")
 
-        self.open_table(QListWidgetItem(self.table_name))
+        self.open_table(QListWidgetItem(self.table_name), self.alch_table)
         
 
     def get_row(self, row):
@@ -248,7 +243,7 @@ class Tables():
         return ans
 
 
-    def open_table(self, item:QListWidgetItem):
+    def open_table(self, item:QListWidgetItem, alch_table):
 
         self.main.stack_main.setCurrentIndex(1)
         
@@ -256,12 +251,14 @@ class Tables():
         self.tw_content.clear()
 
         # переключаем состояние методов менеджера sql на мгновенное выполнение
+        # reinstall
         self.sql.SetSend(True)
 
         self.table_name = item.text()
         # инициализируем содержимое выбранной таблицы сохраняя экземпляр SQLalchemy
+        # reinstall
         self.dict_table = self.sql.get_table(self.table_name)
-        self.alch_table = Table(self.table_name, self.md, autoload_with=self.engine)
+        self.alch_table = alch_table
 
         
         
@@ -328,14 +325,11 @@ class Tables():
         else:
             self.tw_content.verticalHeader().show()
 
-
+        # reinstall
         self.sql.SetSend(self.st)
 
-        
 
-
-
-
+    # Устанвка статуса для кнопки на кортеже
     def initiate_status(self, row:int, max:int):
 
         if row < max:
