@@ -282,16 +282,16 @@
              <number>0</number>
             </property>
             <property name="leftMargin">
-             <number>1</number>
+             <number>0</number>
             </property>
             <property name="topMargin">
-             <number>1</number>
+             <number>4</number>
             </property>
             <property name="rightMargin">
-             <number>1</number>
+             <number>0</number>
             </property>
             <property name="bottomMargin">
-             <number>1</number>
+             <number>0</number>
             </property>
             <item>
              <widget class="QListWidget" name="lw_tables"/>
@@ -1147,7 +1147,7 @@
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>907</width>
+                      <width>865</width>
                       <height>371</height>
                      </rect>
                     </property>
@@ -1161,6 +1161,18 @@
                         <string>Для столбца</string>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_15">
+                        <property name="leftMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="topMargin">
+                         <number>4</number>
+                        </property>
+                        <property name="rightMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="bottomMargin">
+                         <number>0</number>
+                        </property>
                         <item>
                          <widget class="QListWidget" name="lw_columns"/>
                         </item>
@@ -1634,6 +1646,13 @@ p, li { white-space: pre-wrap; }
                        <item>
                         <layout class="QHBoxLayout" name="horizontalLayout_23">
                          <item>
+                          <widget class="QPushButton" name="pb_generate_3">
+                           <property name="text">
+                            <string>Очистить</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
                           <spacer name="horizontalSpacer_11">
                            <property name="orientation">
                             <enum>Qt::Horizontal</enum>
@@ -1647,9 +1666,9 @@ p, li { white-space: pre-wrap; }
                           </spacer>
                          </item>
                          <item>
-                          <widget class="QPushButton" name="pb_generate_3">
+                          <widget class="QCheckBox" name="checkBox_4">
                            <property name="text">
-                            <string>Очистить</string>
+                            <string>Использовать только уникальные значения</string>
                            </property>
                           </widget>
                          </item>
@@ -1657,6 +1676,13 @@ p, li { white-space: pre-wrap; }
                           <widget class="QPushButton" name="pb_save_generator">
                            <property name="text">
                             <string>Связать</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QPushButton" name="pb_cancel_gen">
+                           <property name="text">
+                            <string>Отменить</string>
                            </property>
                           </widget>
                          </item>
@@ -1671,8 +1697,8 @@ p, li { white-space: pre-wrap; }
                      <rect>
                       <x>0</x>
                       <y>0</y>
-                      <width>909</width>
-                      <height>371</height>
+                      <width>597</width>
+                      <height>146</height>
                      </rect>
                     </property>
                     <attribute name="label">
@@ -1685,16 +1711,16 @@ p, li { white-space: pre-wrap; }
                      <item>
                       <layout class="QHBoxLayout" name="horizontalLayout_32">
                        <item>
-                        <widget class="QPushButton" name="pushButton_26">
+                        <widget class="QPushButton" name="pushButton_27">
                          <property name="text">
-                          <string>Перегенерировать</string>
+                          <string>Отвязать генераторы</string>
                          </property>
                         </widget>
                        </item>
                        <item>
-                        <widget class="QPushButton" name="pushButton_27">
+                        <widget class="QPushButton" name="pushButton_26">
                          <property name="text">
-                          <string>Отвязать генераторы</string>
+                          <string>Перегенерировать</string>
                          </property>
                         </widget>
                        </item>
@@ -1710,6 +1736,27 @@ p, li { white-space: pre-wrap; }
                           </size>
                          </property>
                         </spacer>
+                       </item>
+                       <item>
+                        <widget class="QLabel" name="label_32">
+                         <property name="text">
+                          <string>Текущий набор:</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QPushButton" name="pushButton_17">
+                         <property name="text">
+                          <string>Удалить</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QPushButton" name="pushButton_18">
+                         <property name="text">
+                          <string>Сохранить</string>
+                         </property>
+                        </widget>
                        </item>
                       </layout>
                      </item>
@@ -1767,19 +1814,12 @@ p, li { white-space: pre-wrap; }
                     </spacer>
                    </item>
                    <item>
-                    <widget class="QPushButton" name="pushButton_17">
-                     <property name="text">
-                      <string>Создать генератор</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QPushButton" name="pb_generate">
+                    <widget class="QPushButton" name="pb_fill">
                      <property name="enabled">
                       <bool>false</bool>
                      </property>
                      <property name="text">
-                      <string>Генерировать</string>
+                      <string>Заполнить</string>
                      </property>
                     </widget>
                    </item>

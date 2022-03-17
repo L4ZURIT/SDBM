@@ -1,4 +1,5 @@
 from datetime import date, datetime, time
+from traceback import print_tb
 
 from faker import Faker
 
@@ -18,6 +19,27 @@ sys.path.insert(1, './')
 from project.mysql import mysql_m
 from project.request import Request
 from test import human
+
+
+class serialize():
+    # метод для сериализации
+    def __getstate__(self):
+        return self.__dict__
+    
+    # метод для десериализации
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self.__init__(**d)
+        #self.__init__(self.__dict__["values"])
+
+class Qt:
+    class CheckBox(QCheckBox, serialize):
+        txt:str = None
+        def __init__(self, txt) -> None:
+            QCheckBox.__init__(self, txt)
+            self.txt = txt
+        
+   
 
 
 def read_dbg():
@@ -40,9 +62,10 @@ def set_generator(database, table, column, generator):
 
 
 # Генератор для значений вводимых вручную
-class manual():
+class manual(QWidget, serialize):
     values:list = None
     def __init__(self, values:list) -> None:
+        QWidget.__init__(self)
         self.values = values
 
     def generate_random(self, count:int) -> list:
@@ -52,16 +75,23 @@ class manual():
         return random.sample(self.values, count)
 
 
+
 # Виджет генератора для ФИО 
-class FIO(QWidget):
-    def __init__(self) -> None:
-        super().__init__()
+class FIO(QWidget, serialize):
+    def __init__(self, **kwargs) -> None:
+        QWidget.__init__(self)
         self.setLayout(QVBoxLayout())
-        self.cb_male = QCheckBox("Мужские")
-        self.cb_female = QCheckBox("Женские")
+        self.cb_male = Qt.CheckBox("Мужские")
+        self.cb_female = Qt.CheckBox("Женские")
         self.layout().addWidget(self.cb_male)
         self.layout().addWidget(self.cb_female)
         self.layout().setContentsMargins(0,0,0,0)
+
+    def generate_random(self):
+        pass
+
+    def generate_unique(self):
+        pass   
 
 
 # Класс слота генератора в виджете визуализации списка генераторов 
@@ -81,6 +111,7 @@ class moded_item(QListWidgetItem):
 
 
 
+
 # Инициализирующий класс модуля генераторов
 class Generator():
 
@@ -90,6 +121,7 @@ class Generator():
         self.alch_table:Table = None
         self.lw_columns:QListWidget = main.lw_columns
         self.lbl_datatype:QLabel = main.lbl_datatype
+        self.lbl_description:QLabel = main.lbl_description
         self.sw_generator:QStackedWidget = main.sw_generator
         self.gb_parametres:QGroupBox = main.gb_parametres
         self.te_values:QTextEdit = main.te_values
@@ -98,6 +130,7 @@ class Generator():
         self.lbl_own_values_count:QLabel = main.lbl_own_values_count
         self.lbl_datatype_warning:QLabel = main.lbl_datatype_warning
         self.pb_save_generator:QPushButton = main.pb_save_generator
+        self.pb_cancel_gen:QPushButton = main.pb_cancel_gen
         self.sb_cortages:QSpinBox = main.sb_cortages
         self.tb_find_generator:QToolButton = main.tb_find_generator
         self.selected_column:str = None
@@ -115,7 +148,7 @@ class Generator():
         
         # Связка сигналов
         
-        self.lw_columns.itemDoubleClicked.connect(self.select_column)
+        self.lw_columns.itemClicked.connect(self.select_column)
         self.te_values.textChanged.connect(self.get_own_var_from_te)
         self.pb_save_generator.clicked.connect(self.set_generator)
         self.lw_generators.itemClicked.connect(self.show_params)
@@ -166,6 +199,20 @@ class Generator():
         self.dict_of_list_with_values.clear()
         self.dict_of_list_with_values = {str(col.name):[] for col in self.alch_table.columns}
 
+        gens = read_dbg()
+        
+        if gens[self.main.db_name][self.alch_table.name]:
+            self.init_generator(gens)
+
+
+    def init_generator(self, generators):
+        for col in generators[self.main.db_name][self.alch_table.name].keys():
+            self.lw_columns.item([l.name for l in self.alch_table.columns].index(col)).setBackground(QColor(140,255,153))
+            добавить инициализацию генераторов для каждого столбца 
+        
+            
+
+
 
 
     # Инициализация генераторов для отдельного поля в отношении
@@ -186,7 +233,9 @@ class Generator():
             widgetToRemove = self.lo_for_generator.itemAt(c).widget()
             self.lo_for_generator.removeWidget(widgetToRemove)
             widgetToRemove.setParent(None)
+        
         self.lo_for_generator.addWidget(item.widget)
+        self.lbl_description.setText(item.description)
             
     
 
@@ -213,10 +262,29 @@ class Generator():
 
 
     def set_generator(self):
+
+        # Проверяем установлен ли генератор на столбец        
+        try:
+            check = read_dbg()[self.main.db_name][self.alch_table.name][self.selected_column] != None
+        except KeyError:
+            check = False
+
+        if check:
+            say = QMessageBox.question(self.main, "", "У вас уже есть установленный генератор на этом столбце, вы хотите продолжить?")
+            if say == QMessageBox.No:
+                return
+
+
         if self.sw_generator.currentIndex() == 0:
             say = QMessageBox.critical(self.main, "", "auto_increment")
+
+        # обрабатываем генератор выбранный из меню
         elif self.sw_generator.currentIndex() == 1:
-            say = QMessageBox.critical(self.main, "", "")
+
+            #Сериализуем генератор для дальнейшего использования
+            gnrtr = self.lw_generators.selectedItems()[0].widget
+            set_generator(self.main.db_name, self.alch_table.name, self.selected_column, gnrtr)
+
         elif self.sw_generator.currentIndex() == 2:
             say = QMessageBox.critical(self.main, "", "Сначала установите генератор")
         elif self.sw_generator.currentIndex() == 3:
@@ -235,25 +303,13 @@ class Generator():
                 if say == QMessageBox.No:
                     return
 
-            # Проверяем установлен ли генератор на столбец        
-            try:
-                check = read_dbg()[self.main.db_name][self.alch_table.name][self.selected_column] != None
-            except KeyError:
-                check = False
-
-            if check:
-                say = QMessageBox.question(self.main, "", "У вас уже есть установленный генератор на этом столбце, вы хотите продолжить?")
-                if say == QMessageBox.No:
-                    return
-
-
             #Сериализуем генератор для дальнейшего использования
             man_generator = manual(self.list_of_values_for_col)
             set_generator(self.main.db_name, self.alch_table.name, self.selected_column, man_generator)
             
-            # устанавливаем пометку зеленым цветом 
-            self.lw_columns.item([l.name for l in self.alch_table.columns].index(self.selected_column)).setBackground(QColor(140,255,153))
-            
+        # устанавливаем пометку зеленым цветом 
+        self.lw_columns.item([l.name for l in self.alch_table.columns].index(self.selected_column)).setBackground(QColor(140,255,153))
+        
             
     # приведение виджета модуля генераторов к исходному виду
     def clear_generator(self):
@@ -290,16 +346,20 @@ def main():
 
     #set_generator("mydatabase", "книги_редакторы", "код_книги", man)
 
-    write_dbg({})
+    #write_dbg({})
     
     print(read_dbg())
 
+    # obj:QWidget = read_dbg()["mydatabase"]["книги_редакторы"]["код_редактора"]
+    # print(obj.windowTitle())
+
+    df = FIO()
+
     
 if __name__ == '__main__':
+    app = QApplication(sys.argv)
     main()
-
-
-
-
+    sys.exit(app.exec_())
+    
 
 
