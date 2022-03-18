@@ -15,6 +15,7 @@ from project.mysql import mysql_m
 from project.request import Request
 
 
+
 # взято с сайта https://question-it.com/questions/1490148/sqlalchemy-vyvesti-fakticheskij-zapros
 # специальный метод конструктора выражений правильно работающий с датой и временем (НАДО ГРАМОТНО ОФОРМИТЬ)
 def render_query(statement, dialect=None):
@@ -260,7 +261,6 @@ class Tables():
         self.dict_table = self.sql.get_table(self.table_name)
         self.alch_table = alch_table
 
-        
         
 
         # Словарь значений отношения

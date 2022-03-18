@@ -1,5 +1,4 @@
 from datetime import date, datetime, time
-from traceback import print_tb
 
 from faker import Faker
 
@@ -12,6 +11,7 @@ from PyQt5.uic import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import *
+import faker
 from sqlalchemy import Table
 
 
@@ -59,6 +59,20 @@ def set_generator(database, table, column, generator):
     geneartors[database][table][column] = generator
     write_dbg(geneartors)
     
+class borrow(QWidget, serialize):
+    table_name:str = None
+    column_name:str = None
+    
+    def __init__(self, table_name:str, column_name:str, alch) -> None:
+        QWidget.__init__(self)
+        self.table_name, self.column_name = table_name, column_name
+        self.alch:Table = alch
+
+    def generate_random(self, count:int) -> list:
+        return random.choices(self.values, k = count)
+
+    def generate_unique(self, count:int) -> list:
+        return random.sample(self.values, count)
 
 
 # Генератор для значений вводимых вручную
@@ -69,7 +83,7 @@ class manual(QWidget, serialize):
         self.values = values
 
     def generate_random(self, count:int) -> list:
-        return random.choices(self.values, count)
+        return random.choices(self.values, k = count)
 
     def generate_unique(self, count:int) -> list:
         return random.sample(self.values, count)
@@ -87,8 +101,9 @@ class FIO(QWidget, serialize):
         self.layout().addWidget(self.cb_female)
         self.layout().setContentsMargins(0,0,0,0)
 
-    def generate_random(self):
-        pass
+    def generate_random(self, count:int):
+        fake = Faker("ru_RU")
+        return [fake.name() for _ in range(count)]
 
     def generate_unique(self):
         pass   
@@ -120,8 +135,6 @@ class Generator():
         self.main:QMainWindow = main
         self.alch_table:Table = None
         self.lw_columns:QListWidget = main.lw_columns
-        self.lbl_datatype:QLabel = main.lbl_datatype
-        self.lbl_description:QLabel = main.lbl_description
         self.sw_generator:QStackedWidget = main.sw_generator
         self.gb_parametres:QGroupBox = main.gb_parametres
         self.te_values:QTextEdit = main.te_values
@@ -129,10 +142,13 @@ class Generator():
         self.lo_for_generator:QLayout = main.lo_for_generator
         self.lbl_own_values_count:QLabel = main.lbl_own_values_count
         self.lbl_datatype_warning:QLabel = main.lbl_datatype_warning
+        self.lbl_datatype:QLabel = main.lbl_datatype
+        self.lbl_description:QLabel = main.lbl_description
         self.pb_save_generator:QPushButton = main.pb_save_generator
         self.pb_cancel_gen:QPushButton = main.pb_cancel_gen
         self.sb_cortages:QSpinBox = main.sb_cortages
         self.tb_find_generator:QToolButton = main.tb_find_generator
+        self.tw_preview:QTableWidget = main.tw_preview
         self.selected_column:str = None
         self.selected_datatype:type = None
 
@@ -178,7 +194,15 @@ class Generator():
         with open("data/generator.json", encoding="utf-8") as json_file:
             dict_generators = json.load(json_file)
         try:
-            for item in dict_generators[dtype]:
+            gen = read_dbg()[self.main.db_name][self.alch_table.name][self.selected_column]
+            if isinstance(gen, manual):
+                self.sw_generator.setCurrentIndex(4)
+                cont = "\n".join(gen.values)
+                self.te_values.setText(cont)
+        except KeyError:
+            gen = None
+        try:
+            for index, item in enumerate(dict_generators[dtype]):
                 self.lw_generators.addItem(
                     moded_item(
                         dict_generators[dtype][item]["name"], 
@@ -186,8 +210,14 @@ class Generator():
                         dict_generators[dtype][item]["var_list"], 
                         dict_generators[dtype][item]["edit"], 
                         dict_generators[dtype][item]["widget"]))
+                if dict_generators[dtype][item]["widget"]:
+                    if isinstance(gen, eval(dict_generators[dtype][item]["widget"])):
+                        self.lw_generators.item(index).setBackground(QColor(140,255,153))
         except KeyError:
             self.lw_generators.addItem(QListWidgetItem("Для выбранного типа данных, не существует генератора"))
+            return
+        
+        
             
 
     # инициализация модуля генераторов для открытой таблицы
@@ -200,17 +230,37 @@ class Generator():
         self.dict_of_list_with_values = {str(col.name):[] for col in self.alch_table.columns}
 
         gens = read_dbg()
-        
         if gens[self.main.db_name][self.alch_table.name]:
-            self.init_generator(gens)
-
+            self.init_generator(gens[self.main.db_name][self.alch_table.name])
+            self.init_gen_cont_table(gens[self.main.db_name][self.alch_table.name])
+        else:
+            self.tw_preview.setColumnCount(0)
+            self.tw_preview.setRowCount(0)
 
     def init_generator(self, generators):
-        for col in generators[self.main.db_name][self.alch_table.name].keys():
+        for col in generators.keys():
             self.lw_columns.item([l.name for l in self.alch_table.columns].index(col)).setBackground(QColor(140,255,153))
-            добавить инициализацию генераторов для каждого столбца 
-        
             
+
+    def init_gen_cont_table(self, generators):
+        self.tw_preview.setRowCount(self.sb_cortages.value())
+        self.tw_preview.setColumnCount(len(self.alch_table.columns))
+        self.tw_preview.setHorizontalHeaderLabels([str(col.name) for col in self.alch_table.columns])
+        
+        col_labels = [self.tw_preview.horizontalHeaderItem(col_idx).text() for col_idx in range(self.tw_preview.columnCount())]
+
+
+        for c_idx, labe in enumerate(col_labels):
+            if labe in generators.keys():
+                content = generators[labe].generate_random(self.tw_preview.rowCount())
+                for r_idx, item in enumerate(content):
+                    self.tw_preview.setItem(r_idx, c_idx, QTableWidgetItem(item))
+                    self.tw_preview.item(r_idx, c_idx).setBackground(QColor(140,255,153))
+            else:
+                for row in range(self.tw_preview.rowCount()):
+                    self.tw_preview.setItem(row, c_idx, QTableWidgetItem())
+                    self.tw_preview.item(row, c_idx).setBackground(QColor(255,107,129))
+                
 
 
 
@@ -309,7 +359,7 @@ class Generator():
             
         # устанавливаем пометку зеленым цветом 
         self.lw_columns.item([l.name for l in self.alch_table.columns].index(self.selected_column)).setBackground(QColor(140,255,153))
-        
+        self.init_gen_cont_table(read_dbg()[self.main.db_name][self.alch_table.name])
             
     # приведение виджета модуля генераторов к исходному виду
     def clear_generator(self):
@@ -346,7 +396,7 @@ def main():
 
     #set_generator("mydatabase", "книги_редакторы", "код_книги", man)
 
-    #write_dbg({})
+    write_dbg({})
     
     print(read_dbg())
 
