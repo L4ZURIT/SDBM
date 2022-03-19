@@ -11,14 +11,13 @@ from PyQt5.uic import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import *
-import faker
 from sqlalchemy import Table
 
 
 sys.path.insert(1, './')
-from project.mysql import mysql_m
+from project.sql import sqlm
 from project.request import Request
-from test import human
+
 
 
 class serialize():
@@ -145,7 +144,6 @@ class Generator():
         self.lbl_datatype:QLabel = main.lbl_datatype
         self.lbl_description:QLabel = main.lbl_description
         self.pb_save_generator:QPushButton = main.pb_save_generator
-        self.pb_cancel_gen:QPushButton = main.pb_cancel_gen
         self.sb_cortages:QSpinBox = main.sb_cortages
         self.tb_find_generator:QToolButton = main.tb_find_generator
         self.tw_preview:QTableWidget = main.tw_preview
@@ -239,8 +237,10 @@ class Generator():
 
     def init_generator(self, generators):
         for col in generators.keys():
-            self.lw_columns.item([l.name for l in self.alch_table.columns].index(col)).setBackground(QColor(140,255,153))
-            
+            try:
+                self.lw_columns.item([l.name for l in self.alch_table.columns].index(col)).setBackground(QColor(140,255,153))
+            except ValueError as err:
+                reply = QMessageBox.critical(self.main, "", str(err.args))
 
     def init_gen_cont_table(self, generators):
         self.tw_preview.setRowCount(self.sb_cortages.value())

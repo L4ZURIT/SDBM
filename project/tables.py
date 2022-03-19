@@ -6,56 +6,10 @@ import sys
 import pandas as pd
 
 from sqlalchemy import *
-from sqlalchemy.engine.url import URL
-from sqlalchemy.dialects import mysql
-from sqlalchemy.orm import Query
 
 sys.path.insert(1, './')
-from project.mysql import mysql_m
+from project.sql import sqlm
 from project.request import Request
-
-
-
-# взято с сайта https://question-it.com/questions/1490148/sqlalchemy-vyvesti-fakticheskij-zapros
-# специальный метод конструктора выражений правильно работающий с датой и временем (НАДО ГРАМОТНО ОФОРМИТЬ)
-def render_query(statement, dialect=None):
-    """
-    Generate an SQL expression string with bound parameters rendered inline
-    for the given SQLAlchemy statement.
-    WARNING: This method of escaping is insecure, incomplete, and for debugging
-    purposes only. Executing SQL statements with inline-rendered user values is
-    extremely insecure.
-    Based on http://stackoverflow.com/questions/5631078/sqlalchemy-print-the-actual-query
-    """
-    if isinstance(statement, Query):
-        if dialect is None:
-            dialect = statement.session.bind.dialect
-        statement = statement.statement
-    elif dialect is None:
-        dialect = statement.bind.dialect
-
-    class LiteralCompiler(dialect.statement_compiler):
-
-        def visit_bindparam(self, bindparam, within_columns_clause=False,
-                            literal_binds=False, **kwargs):
-            return self.render_literal_value(bindparam.value, bindparam.type)
-
-        def render_array_value(self, val, item_type):
-            if isinstance(val, list):
-                return "{%s}" % ",".join([self.render_array_value(x, item_type) for x in val])
-            return self.render_literal_value(val, item_type)
-
-        def render_literal_value(self, value, type_):
-            if isinstance(value, int):
-                return str(value)
-            elif isinstance(value, (str, date, datetime, timedelta)):
-                return "'%s'" % str(value).replace("'", "''")
-            elif isinstance(value, list):
-                return "'{%s}'" % (",".join([self.render_array_value(x, type_.item_type) for x in value]))
-            return super(LiteralCompiler, self).render_literal_value(value, type_)
-
-    return LiteralCompiler(dialect, statement).process(statement)
-
 
 
 # Класс описывающий кнорки взаимодействия с кортежами в отношении
@@ -118,7 +72,7 @@ class Tables():
         self.st = main.standart
         self.lw_tables:QListWidget = main.lw_tables
         self.tw_content:QTableWidget = main.tw_content
-        self.sql:mysql_m = main.sql
+        self.sql:sqlm = main.sqlm
         self.req:Request = main.req
         self.table_name:str = None
         self.main:QMainWindow = main
@@ -155,10 +109,10 @@ class Tables():
         
 
     def TablesListInit(self):
-        # reinstall
-        tables = self.sql.request(self.sql.get_tables())
+        tables = self.sql.engine.table_names()
+        print(tables)
         for table in tables:
-            self.lw_tables.addItem(str(table[0]))
+            self.lw_tables.addItem(str(table))
 
     def TablesInterfaceInit(self):
         menu = QMenu(self.tb_content)
@@ -211,13 +165,13 @@ class Tables():
             
             
         elif button.state == 2: # добавить
-            req = self.alch_table.insert().values(tuple(r[j] 
+            req = self.alch_table.insert().values(tuple(r[j] if r[j] != "" else "NULL" 
                     for j in range(len(self.alch_table.columns))))
         else:
             return 
             
         try:
-            self.req.go(render_query(req))
+            self.req.go(req)
         except ValueError:
             mes = QMessageBox.critical(self.main, "aa", "ss")
 
@@ -231,7 +185,7 @@ class Tables():
             if type(self.tw_content.item(row, col)) is QTableWidgetItem:
                 ans.append(self.tw_content.item(row, col).text())
             else:
-                ans.append('')
+                ans.append("")
         return ans
 
 
@@ -247,25 +201,18 @@ class Tables():
     def open_table(self, item:QListWidgetItem, alch_table):
 
         self.main.stack_main.setCurrentIndex(1)
-        
-
         self.tw_content.clear()
-
-        # переключаем состояние методов менеджера sql на мгновенное выполнение
-        # reinstall
-        self.sql.SetSend(True)
-
         self.table_name = item.text()
         # инициализируем содержимое выбранной таблицы сохраняя экземпляр SQLalchemy
-        # reinstall
-        self.dict_table = self.sql.get_table(self.table_name)
-        self.alch_table = alch_table
-
         
+        self.alch_table = alch_table
+        self.dict_table = self.sql.get_table(self.alch_table)
+            
 
         # Словарь значений отношения
         keys = list(self.dict_table.keys())
         values = list(self.dict_table.values())
+
 
 
         # Первоначальная настройка интерфейса таблицы с установлением количества колонок и их размером
@@ -297,6 +244,7 @@ class Tables():
                 self.tw_content.setHorizontalHeaderItem(col+1, QTableWidgetItem(str(keys[col])))
                 for row in range(len(values[col])):
                     self.tw_content.setItem(row, col+1, QTableWidgetItem(str(values[col][row])))
+                    
 
             # Наполняем первый столбец интерактивными кнопками
             for row in range(self.tw_content.rowCount()):
@@ -324,9 +272,6 @@ class Tables():
             self.tw_content.verticalHeader().hide()
         else:
             self.tw_content.verticalHeader().show()
-
-        # reinstall
-        self.sql.SetSend(self.st)
 
 
     # Устанвка статуса для кнопки на кортеже

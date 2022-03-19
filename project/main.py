@@ -7,12 +7,9 @@ import sys
 from sqlalchemy import *
 import sqlalchemy
 from sqlalchemy.engine.url import URL
-from sqlalchemy.dialects import mysql
-from sqlalchemy.orm import Query
-
 
 sys.path.insert(1, './')
-from project.mysql import mysql_m
+from project.sql import sqlm
 from project.request import Request
 from project.tables import Tables
 from project.indexes import Indexes
@@ -38,7 +35,7 @@ class MainWindow(QMainWindow):
         # - - -
 
         # инициализация классов 
-        self.sql = mysql_m(self.standart)
+        self.sqlm = sqlm()
         self.req = Request(self)
         self.tables_manager = Tables(self)
         self.index_manager = Indexes(self)
@@ -46,13 +43,13 @@ class MainWindow(QMainWindow):
         # ----
 
         # Инициализация SQLAlchemy
-        self.engine = create_engine(URL.create(**mysql_m.j_read()))
+        self.engine = create_engine(URL.create(**sqlm.j_read()))
         self.md = MetaData(bind=self.engine)
         # ---
 
         # настройка интерфейса 
         #WARNING!!!!!
-        self.gb_SQL.hide()
+        #self.gb_SQL.hide()
         #WARNING!!!!!   
         # ---
 

@@ -6,9 +6,11 @@ from PyQt5.QtCore import Qt
 import sys
 import pymysql
 
+from sqlalchemy.exc import DBAPIError, SQLAlchemyError
+
 
 sys.path.insert(1, './')
-from project.mysql import mysql_m
+from project.sql import render_query, sqlm
 
 
 class Request():
@@ -38,7 +40,7 @@ class Request():
         self.te_result:QTextEdit = main.te_result
         self.pb_up_down:QPushButton = main.pb_up_down
         self.te_req:QTextEdit = main.te_req
-        self.sql:mysql_m = main.sql
+        self.sql:sqlm = main.sqlm
 
 
         # настройка интерфейса 
@@ -70,7 +72,10 @@ class Request():
     # Обновляет содержимое таблички истории запросов в нижнем групбоксе SQL
     def write_ui(self, diction:dict):
         self.tw_story.clearContents()
-        count = len(diction["dates"])
+        try:
+            count = len(diction["dates"])
+        except KeyError:
+            count = 0
         self.tw_story.setRowCount(count)
         for row in range(count):
             self.tw_story.setItem(row, 0, QTableWidgetItem(diction["dates"][row][:10]))
@@ -85,17 +90,34 @@ class Request():
 
         diction = self.j_read()
 
-        diction["dates"].append(str(datetime.now()))
-        diction["requests"].append(req)
-        diction["answers"].append(str(content))
-        if  (type(content) == pymysql.err.ProgrammingError or
-        type(content) == pymysql.err.DataError or
-        type(content) == pymysql.err.IntegrityError or
-        type(content) == pymysql.err.NotSupportedError or
-        type(content) == pymysql.err.OperationalError):
-            diction["status"].append("Fail")
-        else: 
-            diction["status"].append("OK")
+        try:
+            diction["dates"].append(str(datetime.now()))
+        except KeyError:
+            diction["dates"] = []
+            diction["dates"].append(str(datetime.now()))
+        try:
+            diction["requests"].append(str(req))
+        except KeyError:
+            diction["requests"] = []
+            diction["requests"].append(str(req))
+        try:
+            diction["answers"].append(str(content))
+        except KeyError:
+            diction["answers"] = []
+            diction["answers"].append(str(content))
+        try:
+            if isinstance(content, (DBAPIError, SQLAlchemyError)):
+                diction["status"].append("Fail")
+            else: 
+                diction["status"].append("OK")
+        except KeyError:
+                diction["status"] = []
+                if isinstance(content, (DBAPIError, SQLAlchemyError)):
+                    diction["status"].append("Fail")
+                else: 
+                    diction["status"].append("OK")
+
+        
 
         self.j_write(diction)
         self.write_ui(diction)
@@ -141,7 +163,10 @@ class Request():
         self.te_result.clear()
         result = self.sql.request(req)
         self.te_result.setText(str(result))
-        self.write_json(result, req)
+        if type(req) == str:
+            self.write_json(result, req)
+        else:
+            self.write_json(result, render_query(req))
         return result
 
 

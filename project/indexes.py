@@ -6,7 +6,7 @@ from sqlalchemy import Table
 
 
 sys.path.insert(1, './')
-from project.mysql import mysql_m
+from project.sql import sqlm
 from project.request import Request
 
 
@@ -94,7 +94,7 @@ class Indexes():
         self.main:QMainWindow = main
         self.tw_indexes:QTableWidget = main.tw_indexes
         # reinstall
-        self.sql:mysql_m = main.sql
+        self.sql:sqlm = main.sqlm
         self.table_name:str = None
         self.alch_table:Table = None
         # - - -
@@ -125,18 +125,13 @@ class Indexes():
 
         self.tw_indexes.setRowCount(0)
 
-
-        # Рудимент, который в будущем необходимо вырезать и заменить использующийся модуль на более продвинутый, например как уже используется SQLAlchemy
-        # reinstall
-        self.sql.SetSend(True)
-
         self.table_name = item.text()
 
         # Инициализация класса таблицы SQLAlchemy
         self.alch_table = alch_table
 
         # reinstall
-        keys = list(self.sql.get_table(self.table_name).keys())
+        keys = list(self.sql.get_table(self.alch_table).keys())
 
         self.tw_indexes.setRowCount(len(keys))
 

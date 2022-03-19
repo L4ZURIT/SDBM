@@ -1148,7 +1148,7 @@
                       <x>0</x>
                       <y>0</y>
                       <width>865</width>
-                      <height>371</height>
+                      <height>397</height>
                      </rect>
                     </property>
                     <attribute name="label">
@@ -1175,6 +1175,24 @@
                         </property>
                         <item>
                          <widget class="QListWidget" name="lw_columns"/>
+                        </item>
+                        <item>
+                         <layout class="QHBoxLayout" name="horizontalLayout_25">
+                          <item>
+                           <widget class="QPushButton" name="pb_generate_3">
+                            <property name="text">
+                             <string>Отвязать генераторы</string>
+                            </property>
+                           </widget>
+                          </item>
+                          <item>
+                           <widget class="QCheckBox" name="checkBox_11">
+                            <property name="text">
+                             <string>Все</string>
+                            </property>
+                           </widget>
+                          </item>
+                         </layout>
                         </item>
                        </layout>
                       </widget>
@@ -1241,7 +1259,7 @@
                        <item>
                         <widget class="QStackedWidget" name="sw_generator">
                          <property name="currentIndex">
-                          <number>4</number>
+                          <number>0</number>
                          </property>
                          <widget class="QWidget" name="page_9">
                           <layout class="QVBoxLayout" name="verticalLayout_18">
@@ -1335,7 +1353,7 @@
                                   </size>
                                  </property>
                                  <property name="text">
-                                  <string>&gt;</string>
+                                  <string>...</string>
                                  </property>
                                 </widget>
                                </item>
@@ -1646,13 +1664,6 @@ p, li { white-space: pre-wrap; }
                        <item>
                         <layout class="QHBoxLayout" name="horizontalLayout_23">
                          <item>
-                          <widget class="QPushButton" name="pb_generate_3">
-                           <property name="text">
-                            <string>Очистить</string>
-                           </property>
-                          </widget>
-                         </item>
-                         <item>
                           <spacer name="horizontalSpacer_11">
                            <property name="orientation">
                             <enum>Qt::Horizontal</enum>
@@ -1679,13 +1690,6 @@ p, li { white-space: pre-wrap; }
                            </property>
                           </widget>
                          </item>
-                         <item>
-                          <widget class="QPushButton" name="pb_cancel_gen">
-                           <property name="text">
-                            <string>Отменить</string>
-                           </property>
-                          </widget>
-                         </item>
                         </layout>
                        </item>
                       </layout>
@@ -1698,11 +1702,11 @@ p, li { white-space: pre-wrap; }
                       <x>0</x>
                       <y>0</y>
                       <width>865</width>
-                      <height>371</height>
+                      <height>397</height>
                      </rect>
                     </property>
                     <attribute name="label">
-                     <string>Предпросмотр</string>
+                     <string>Содержимое</string>
                     </attribute>
                     <layout class="QVBoxLayout" name="verticalLayout_28">
                      <item>
@@ -1997,7 +2001,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>1233</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuEghfdktybt">
