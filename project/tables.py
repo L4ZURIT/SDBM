@@ -1,4 +1,5 @@
 from datetime import date, datetime, time, timedelta
+from xmlrpc.client import MAXINT
 from PyQt5.uic import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt
@@ -10,6 +11,16 @@ from sqlalchemy import *
 sys.path.insert(1, './')
 from project.sql import sqlm
 from project.request import Request
+
+
+
+class ed():
+    class _int(QSpinBox):
+        def __init__(self, value, parent=None):
+            super().__init__(parent)
+            self.setValue(value)
+
+        
 
 
 # Класс описывающий кнорки взаимодействия с кортежами в отношении
@@ -165,7 +176,7 @@ class Tables():
             
             
         elif button.state == 2: # добавить
-            req = self.alch_table.insert().values(tuple(r[j] if r[j] != "" else "NULL" 
+            req = self.alch_table.insert().values(tuple(r[j] 
                     for j in range(len(self.alch_table.columns))))
         else:
             return 
@@ -182,10 +193,10 @@ class Tables():
         ans = []
         
         for col in range(1, self.tw_content.columnCount()):
-            if type(self.tw_content.item(row, col)) is QTableWidgetItem:
+            if type(self.tw_content.item(row, col)) is QTableWidgetItem and self.tw_content.item(row, col).text() != "None":
                 ans.append(self.tw_content.item(row, col).text())
             else:
-                ans.append("")
+                ans.append(None)
         return ans
 
 
@@ -208,6 +219,7 @@ class Tables():
         self.alch_table = alch_table
         self.dict_table = self.sql.get_table(self.alch_table)
             
+        print(self.dict_table, " - ", type(self.dict_table))
 
         # Словарь значений отношения
         keys = list(self.dict_table.keys())
@@ -244,6 +256,9 @@ class Tables():
                 self.tw_content.setHorizontalHeaderItem(col+1, QTableWidgetItem(str(keys[col])))
                 for row in range(len(values[col])):
                     self.tw_content.setItem(row, col+1, QTableWidgetItem(str(values[col][row])))
+                    # if isinstance(values[col][row], int):
+                    #     self.tw_content.setIndexWidget(self.tw_content.model().index(row,col+1), ed._int(values[col][row]))
+                    
                     
 
             # Наполняем первый столбец интерактивными кнопками
@@ -259,8 +274,10 @@ class Tables():
 
             for col in range(len(keys)):
                 self.tw_content.setHorizontalHeaderItem(col, QTableWidgetItem(str(keys[col])))
+                print()
                 for row in range(len(values[col])):
                     self.tw_content.setItem(row, col, QTableWidgetItem(str(values[col][row])))
+                    print(str(values[col][row]), " - " ,type(values[col][row]))
 
             self.tw_content.setEditTriggers(QAbstractItemView.NoEditTriggers)
 

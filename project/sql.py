@@ -6,26 +6,17 @@ import pandas as pd
 import numpy as np
 
 from datetime import date, datetime, time, timedelta
+from pymysql import NULL
 
-from sqlalchemy import *
+from sqlalchemy import create_engine, Column, Table, MetaData
 from sqlalchemy.engine.url import URL
-from sqlalchemy.orm import sessionmaker, Query
+from sqlalchemy.orm import sessionmaker, Query, scoped_session
 from sqlalchemy.exc import ResourceClosedError
 
-from sqlalchemy.dialects import mysql
 
-
-# взято с сайта https://question-it.com/questions/1490148/sqlalchemy-vyvesti-fakticheskij-zapros
-# специальный метод конструктора выражений правильно работающий с датой и временем (НАДО ГРАМОТНО ОФОРМИТЬ)
+# метод построения запроса с параметрами
 def render_query(statement, dialect=None):
-    """
-    Generate an SQL expression string with bound parameters rendered inline
-    for the given SQLAlchemy statement.
-    WARNING: This method of escaping is insecure, incomplete, and for debugging
-    purposes only. Executing SQL statements with inline-rendered user values is
-    extremely insecure.
-    Based on http://stackoverflow.com/questions/5631078/sqlalchemy-print-the-actual-query
-    """
+
     if isinstance(statement, Query):
         if dialect is None:
             dialect = statement.session.bind.dialect
@@ -45,10 +36,13 @@ def render_query(statement, dialect=None):
             return self.render_literal_value(val, item_type)
 
         def render_literal_value(self, value, type_):
+            # Здесь вписывать необрабатываемые типы данных
             if isinstance(value, int):
                 return str(value)
-            elif isinstance(value, (str, date, datetime, timedelta)):
+            elif isinstance(value, (str, date, datetime, timedelta, time)):
                 return "'%s'" % str(value).replace("'", "''")
+            elif value == None:
+                return "NULL"
             elif isinstance(value, list):
                 return "'{%s}'" % (",".join([self.render_array_value(x, type_.item_type) for x in value]))
             return super(LiteralCompiler, self).render_literal_value(value, type_)
@@ -71,6 +65,9 @@ class sqlm():
         self.engine = create_engine(URL.create(**self.j_read()))
         self.md = MetaData(bind=self.engine)
         self.dialect = None
+        self.db_session = scoped_session(sessionmaker(autocommit=False,
+                                         autoflush=False,
+                                         bind=self.engine))
 
 
 
@@ -88,38 +85,33 @@ class sqlm():
     def get_table(self, table:Table):
         req = table.select()
         conn = self.engine.connect()
-        try:
-            tab = pd.read_sql(str(req.compile(self.engine)), conn)
-            ans = tab.to_dict(orient='list')
-            return ans
-        except Exception as e:
-            print(e)
-            return e
+        
+        #tab = pd.read_sql(str(req.compile(self.engine)), conn)
+        res = conn.execute(req)
+        tab = pd.DataFrame(res.fetchall())
+        ans = tab.to_dict(orient='list')
+        if ans == {}:
+            ans = {str(col.name):[] for col in table.columns}
+        return ans
+        
+
+
+
 
 
 
 if __name__ == "__main__":
     s = sqlm()
-    alch = Table("книги", s.md, autoload_with=s.engine)
+    alch_table = Table("кабинет", s.md, autoload_with=s.engine)
 
-    req = alch.select()
-    print(req)
-    print(s.request(req))
+    
 
-    req = alch.insert().values(**{
-        "номер_книги": len(str(s.request(req)).splitlines())+1,
-        "название_книги": "7",
-        "дата_выхода":datetime(2000, 12,12,12,12),
-        "тираж":100,
-        "ответственный_редактор":"go"
+    col:Column = alch_table.columns[0]
 
-    })
+    print(col.description())
 
 
-    print(req.compile(compile_kwargs={"literal_binds": True}))
-    print(s.request(req))
-
-
+    
     
     
      
