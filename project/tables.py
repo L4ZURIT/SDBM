@@ -121,7 +121,6 @@ class Tables():
 
     def TablesListInit(self):
         tables = self.sql.engine.table_names()
-        print(tables)
         for table in tables:
             self.lw_tables.addItem(str(table))
 
@@ -193,10 +192,13 @@ class Tables():
         ans = []
         
         for col in range(1, self.tw_content.columnCount()):
-            if type(self.tw_content.item(row, col)) is QTableWidgetItem and self.tw_content.item(row, col).text() != "None":
+            
+            if type(self.tw_content.item(row, col)) is QTableWidgetItem and self.tw_content.item(row, col).text() != "None" and self.tw_content.item(row, col).text() != "nan" and self.tw_content.item(row, col).text().replace(" ", "") != "":
                 ans.append(self.tw_content.item(row, col).text())
             else:
                 ans.append(None)
+
+        print(ans)
         return ans
 
 
@@ -219,7 +221,7 @@ class Tables():
         self.alch_table = alch_table
         self.dict_table = self.sql.get_table(self.alch_table)
             
-        print(self.dict_table, " - ", type(self.dict_table))
+        
 
         # Словарь значений отношения
         keys = list(self.dict_table.keys())
@@ -274,10 +276,9 @@ class Tables():
 
             for col in range(len(keys)):
                 self.tw_content.setHorizontalHeaderItem(col, QTableWidgetItem(str(keys[col])))
-                print()
                 for row in range(len(values[col])):
                     self.tw_content.setItem(row, col, QTableWidgetItem(str(values[col][row])))
-                    print(str(values[col][row]), " - " ,type(values[col][row]))
+                    
 
             self.tw_content.setEditTriggers(QAbstractItemView.NoEditTriggers)
 

@@ -8,7 +8,7 @@ import numpy as np
 from datetime import date, datetime, time, timedelta
 from pymysql import NULL
 
-from sqlalchemy import create_engine, Column, Table, MetaData
+from sqlalchemy import create_engine, Column, Table, MetaData, ForeignKey, select
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker, Query, scoped_session
 from sqlalchemy.exc import ResourceClosedError
@@ -62,7 +62,7 @@ class sqlm():
         return data
 
     def __init__(self) -> None:
-        self.engine = create_engine(URL.create(**self.j_read()))
+        self.engine = create_engine(URL.create(**self.j_read()), pool_recycle=1800)
         self.md = MetaData(bind=self.engine)
         self.dialect = None
         self.db_session = scoped_session(sessionmaker(autocommit=False,
@@ -94,6 +94,17 @@ class sqlm():
             ans = {str(col.name):[] for col in table.columns}
         return ans
         
+    def get_column(self, table:Table, column):
+        req = table.select()
+        conn = self.engine.connect()
+        
+        #tab = pd.read_sql(str(req.compile(self.engine)), conn)
+        res = conn.execute(req)
+        tab = pd.DataFrame(res.fetchall())
+        ans = tab.to_dict(orient='list')
+        if ans == {}:
+            ans = {str(col.name):[] for col in table.columns}
+        return ans[column]
 
 
 
@@ -102,13 +113,26 @@ class sqlm():
 
 if __name__ == "__main__":
     s = sqlm()
-    alch_table = Table("кабинет", s.md, autoload_with=s.engine)
+    alch_table = Table("книги", s.md, autoload_with=s.engine)
+    print(s.get_column(alch_table, alch_table.columns[1].name))
+
+
+
+
+
+    # alch_table = Table("книги_в_заказе", s.md, autoload_with=s.engine)
 
     
 
-    col:Column = alch_table.columns[0]
+    # col:Column = alch_table.columns[1]
 
-    print(col.description())
+    # #fk = ForeignKey()
+    
+
+    # for key in col.foreign_keys:
+    #     print(key.column, " - ", type(key.column), str(key.column.name), str(key.column.table))
+
+  
 
 
     

@@ -87,7 +87,7 @@ class MainWindow(QMainWindow):
                     table:{} for table in sqlalchemy.inspect(self.engine).get_table_names()
                 }
             })
-            print(read_dbg())
+            
         pass
         
 

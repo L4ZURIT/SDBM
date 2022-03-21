@@ -37,6 +37,12 @@ class Qt:
         def __init__(self, txt) -> None:
             QCheckBox.__init__(self, txt)
             self.txt = txt
+
+    class Label(QLabel, serialize):
+        txt:str = None
+        def __init__(self, txt) -> None:
+            QLabel.__init__(self, txt)
+            self.txt = txt
         
    
 
@@ -58,38 +64,8 @@ def set_generator(database, table, column, generator):
     geneartors[database][table][column] = generator
     write_dbg(geneartors)
     
-class borrow(QWidget, serialize):
-    table_name:str = None
-    column_name:str = None
-    
-    def __init__(self, table_name:str, column_name:str, alch) -> None:
-        QWidget.__init__(self)
-        self.table_name, self.column_name = table_name, column_name
-        self.alch:Table = alch
 
-    def generate_random(self, count:int) -> list:
-        return random.choices(self.values, k = count)
-
-    def generate_unique(self, count:int) -> list:
-        return random.sample(self.values, count)
-
-
-# Генератор для значений вводимых вручную
-class manual(QWidget, serialize):
-    values:list = None
-    def __init__(self, values:list) -> None:
-        QWidget.__init__(self)
-        self.values = values
-
-    def generate_random(self, count:int) -> list:
-        return random.choices(self.values, k = count)
-
-    def generate_unique(self, count:int) -> list:
-        return random.sample(self.values, count)
-
-
-
-# Виджет генератора для ФИО 
+    # Виджет генератора для ФИО 
 class FIO(QWidget, serialize):
     def __init__(self, **kwargs) -> None:
         QWidget.__init__(self)
@@ -108,6 +84,54 @@ class FIO(QWidget, serialize):
         pass   
 
 
+"""
+
+class borrow(QWidget, serialize):
+    table_name:str = None
+    column_name:str = None
+    
+    def __init__(self, fk, sql:sqlm) -> None:
+        QWidget.__init__(self)
+        self.fk = fk
+        self.sql = sqlm
+
+    def generate_random(self, count:int) -> list:
+        values = []
+        for key in self.fk:
+            for val in self.sql.get_column(key.column.table, key.column.name):
+                values.append(val)
+
+        return random.choices(values, k = count)
+
+    def generate_unique(self, count:int) -> list:
+        return random.sample(self.values, count)
+
+"""  
+
+
+
+# Генератор для значений вводимых вручную
+class manual(QWidget, serialize):
+    values:list = None
+    def __init__(self, values:list) -> None:
+        QWidget.__init__(self)
+        self.values = values
+
+    def generate_random(self, count:int) -> list:
+        return random.choices(self.values, k = count)
+
+    def generate_unique(self, count:int) -> list:
+        return random.sample(self.values, count)
+
+class empty(QWidget, serialize):
+    def __init__(self, **kwargs):
+        QWidget.__init__(self)
+        self.setLayout(QVBoxLayout())
+        self.lbl = Qt.Label("НЕТ ВИДЖЕТА")
+        self.layout().addWidget(self.lbl)
+        self.layout().setContentsMargins(0,0,0,0)
+
+
 # Класс слота генератора в виджете визуализации списка генераторов 
 class moded_item(QListWidgetItem):
     def __init__(self, name, description, var_list, edit, widget) -> None:
@@ -121,7 +145,7 @@ class moded_item(QListWidgetItem):
             self.widget = eval(widget)()
         except TypeError:
             print("У генератора '%s' не настроен виджет параметров"%name)
-            self.widget = QLabel("")
+            self.widget = empty()
 
 
 
@@ -227,6 +251,10 @@ class Generator():
         self.dict_of_list_with_values.clear()
         self.dict_of_list_with_values = {str(col.name):[] for col in self.alch_table.columns}
 
+        for r in range(self.lw_columns.count()):
+            if self.alch_table.columns[self.lw_columns.item(r).text()].autoincrement == True:
+                self.lw_columns.item(r).setBackground(QColor(140,255,153))
+
         gens = read_dbg()
         if gens[self.main.db_name][self.alch_table.name]:
             self.init_generator(gens[self.main.db_name][self.alch_table.name])
@@ -256,6 +284,16 @@ class Generator():
                 for r_idx, item in enumerate(content):
                     self.tw_preview.setItem(r_idx, c_idx, QTableWidgetItem(item))
                     self.tw_preview.item(r_idx, c_idx).setBackground(QColor(140,255,153))
+            elif self.alch_table.columns[labe].autoincrement == True:
+                for row in range(self.tw_preview.rowCount()):
+                    self.tw_preview.setItem(row, c_idx, QTableWidgetItem())
+                    self.tw_preview.item(row, c_idx).setText("a_i")
+                    self.tw_preview.item(row, c_idx).setBackground(QColor(140,255,153))
+            elif self.alch_table.columns[labe].foreign_keys:
+                for row in range(self.tw_preview.rowCount()):
+                    self.tw_preview.setItem(row, c_idx, QTableWidgetItem())
+                    self.tw_preview.item(row, c_idx).setText("f_k")
+                    self.tw_preview.item(row, c_idx).setBackground(QColor(140,255,153))
             else:
                 for row in range(self.tw_preview.rowCount()):
                     self.tw_preview.setItem(row, c_idx, QTableWidgetItem())
@@ -332,7 +370,14 @@ class Generator():
         elif self.sw_generator.currentIndex() == 1:
 
             #Сериализуем генератор для дальнейшего использования
-            gnrtr = self.lw_generators.selectedItems()[0].widget
+            try:
+                gnrtr = self.lw_generators.selectedItems()[0].widget
+            except IndexError:
+                reply = QMessageBox.critical(self.main, "", "Связать что?")
+                return
+            if isinstance(gnrtr, empty):
+                reply = QMessageBox.critical(self.main, "", "У генератора нет генератора")
+                return
             set_generator(self.main.db_name, self.alch_table.name, self.selected_column, gnrtr)
 
         elif self.sw_generator.currentIndex() == 2:
