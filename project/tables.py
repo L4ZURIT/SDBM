@@ -7,6 +7,7 @@ import sys
 import pandas as pd
 
 from sqlalchemy import *
+from project.generator import generate_fake_cortages_for
 
 sys.path.insert(1, './')
 from project.sql import sqlm
@@ -59,6 +60,9 @@ class ButtonForRow(QPushButton):
             self.setText("")
             self.setEnabled(False)
             pass
+        elif state == 4: # Генерация
+            self.setText("G")
+            pass
 
     # Реализация метода, который вызывается при нажатии на кнопку описан в родительском классе Tables и называется MethodForButton
     def send_self(self):
@@ -88,6 +92,7 @@ class Tables():
         self.table_name:str = None
         self.main:QMainWindow = main
         self.cb_write_mode:QCheckBox = main.cb_write_mode
+        self.cb_generate_mode:QCheckBox = main.cb_generate_mode
         self.tb_content:QToolButton = main.tb_content
         self.spl_content:QSplitter = main.spl_content
         self.gb_properties:QGroupBox = main.gb_properties
@@ -177,6 +182,14 @@ class Tables():
         elif button.state == 2: # добавить
             req = self.alch_table.insert().values(tuple(r[j] 
                     for j in range(len(self.alch_table.columns))))
+
+        elif button.state == 4: # Генерировать
+            cortage = generate_fake_cortages_for(self.main.db_name, self.alch_table, 1, self.sql)
+            for idx, c in enumerate(cortage[0]):
+                self.tw_content.setItem(button.index, idx+1, QTableWidgetItem(str(c if c is not None else "")))
+            button.state = 2
+            button.setText("+")
+            return
         else:
             return 
             
@@ -298,6 +311,8 @@ class Tables():
         if row < max:
             return 0
         elif row == max:
+            if self.cb_generate_mode.isChecked():
+                return 4
             return 2
         else:
             return 3

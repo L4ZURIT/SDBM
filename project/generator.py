@@ -18,7 +18,21 @@ sys.path.insert(1, './')
 from project.sql import sqlm
 from project.request import Request
 
-
+def generate_fake_cortages_for(db_name:str, table:Table, count:int, sql:sqlm):
+        gens = read_dbg()
+        cs = []
+        for i in range(count):
+            c = []
+            for col in table.columns:
+                if col.name in gens[db_name][table.name]:
+                    c.append(gens[db_name][table.name][col.name].generate_random(1)[0])
+                elif col.foreign_keys:
+                    b = borrow(col.foreign_keys, sql)
+                    c.append(b.generate_random(1)[0])
+                else:
+                    c.append(None)
+            cs.append(tuple(c))
+        return tuple(cs)
 
 class serialize():
     # метод для сериализации
@@ -170,6 +184,7 @@ class Generator():
         self.main:QMainWindow = main
         self.alch_table:Table = None
         self.sql = main.sqlm
+        self.req:Request = main.req
         self.lw_columns:QListWidget = main.lw_columns
         self.lw_fk_values:QListWidget = main.lw_fk_values
         self.sw_generator:QStackedWidget = main.sw_generator
@@ -183,6 +198,7 @@ class Generator():
         self.lbl_datatype:QLabel = main.lbl_datatype
         self.lbl_description:QLabel = main.lbl_description
         self.pb_save_generator:QPushButton = main.pb_save_generator
+        self.pb_fill:QPushButton = main.pb_fill
         self.sb_cortages:QSpinBox = main.sb_cortages
         self.tb_find_generator:QToolButton = main.tb_find_generator
         self.tw_preview:QTableWidget = main.tw_preview
@@ -197,6 +213,8 @@ class Generator():
 
 
         self.ToolButtonInit()
+
+        
                 
         
         # Связка сигналов
@@ -205,8 +223,13 @@ class Generator():
         self.te_values.textChanged.connect(self.get_own_var_from_te)
         self.pb_save_generator.clicked.connect(self.set_generator)
         self.lw_generators.itemClicked.connect(self.show_params)
+        self.pb_fill.clicked.connect(self.fill_fake_data)
         # 
         self.sw_generator.setCurrentIndex(2)
+
+    def fill_fake_data(self):
+        self.req.go(
+            self.alch_table.insert().values(generate_fake_cortages_for(self.main.db_name, self.alch_table, self.sb_cortages.value(), self.sql)))
 
 
     # Инициализация кнопки раскрывающегося списка для работы с генераторами
@@ -316,6 +339,9 @@ class Generator():
                 for row in range(self.tw_preview.rowCount()):
                     self.tw_preview.setItem(row, c_idx, QTableWidgetItem())
                     self.tw_preview.item(row, c_idx).setBackground(QColor(255,107,129))
+      
+            
+
                 
 
     def InitForeignKeys(self, foreign_keys):

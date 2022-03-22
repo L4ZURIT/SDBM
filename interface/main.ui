@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1233</width>
+    <width>1232</width>
     <height>846</height>
    </rect>
   </property>
@@ -680,7 +680,7 @@
              <item>
               <widget class="QTabWidget" name="tbw_tables">
                <property name="currentIndex">
-                <number>2</number>
+                <number>0</number>
                </property>
                <widget class="QWidget" name="tab">
                 <attribute name="title">
@@ -903,7 +903,7 @@
                       </widget>
                      </item>
                      <item>
-                      <widget class="QCheckBox" name="cb_write_mode_2">
+                      <widget class="QCheckBox" name="cb_generate_mode">
                        <property name="text">
                         <string>Включить генерацию</string>
                        </property>
@@ -1713,7 +1713,7 @@ p, li { white-space: pre-wrap; }
                    <item>
                     <widget class="QPushButton" name="pb_fill">
                      <property name="enabled">
-                      <bool>false</bool>
+                      <bool>true</bool>
                      </property>
                      <property name="text">
                       <string>Заполнить</string>
@@ -1914,7 +1914,7 @@ p, li { white-space: pre-wrap; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1233</width>
+     <width>1232</width>
      <height>26</height>
     </rect>
    </property>
