@@ -94,7 +94,7 @@ class sqlm():
             ans = {str(col.name):[] for col in table.columns}
         return ans
         
-    def get_column(self, table:Table, column):
+    def get_column(self, table, column):
         req = table.select()
         conn = self.engine.connect()
         
@@ -111,6 +111,8 @@ class sqlm():
 
 
 
+
+
 if __name__ == "__main__":
     s = sqlm()
     alch_table = Table("книги", s.md, autoload_with=s.engine)
@@ -120,17 +122,15 @@ if __name__ == "__main__":
 
 
 
-    # alch_table = Table("книги_в_заказе", s.md, autoload_with=s.engine)
+    alch_table = Table("книги_в_заказе", s.md, autoload_with=s.engine)
 
     
 
-    # col:Column = alch_table.columns[1]
+    col:Column = alch_table.columns[1]
 
-    # #fk = ForeignKey()
-    
 
-    # for key in col.foreign_keys:
-    #     print(key.column, " - ", type(key.column), str(key.column.name), str(key.column.table))
+    for key in col.foreign_keys:
+        print(key.column, " - ", type(key.column), str(key.column.name), str(key.column.table))
 
   
 

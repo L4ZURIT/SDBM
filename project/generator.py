@@ -84,7 +84,7 @@ class FIO(QWidget, serialize):
         pass   
 
 
-"""
+
 
 class borrow(QWidget, serialize):
     table_name:str = None
@@ -93,20 +93,22 @@ class borrow(QWidget, serialize):
     def __init__(self, fk, sql:sqlm) -> None:
         QWidget.__init__(self)
         self.fk = fk
-        self.sql = sqlm
+        self.sql = sql
 
-    def generate_random(self, count:int) -> list:
+    def get_all_values(self):
         values = []
         for key in self.fk:
             for val in self.sql.get_column(key.column.table, key.column.name):
                 values.append(val)
+        return values
 
-        return random.choices(values, k = count)
+
+    def generate_random(self, count:int) -> list:
+        return random.choices(self.get_all_values(), k = count)
 
     def generate_unique(self, count:int) -> list:
         return random.sample(self.values, count)
 
-"""  
 
 
 
@@ -147,6 +149,16 @@ class moded_item(QListWidgetItem):
             print("У генератора '%s' не настроен виджет параметров"%name)
             self.widget = empty()
 
+class gb_for_keys(QGroupBox):
+    def __init__(self, table_name, column_name):
+        super().__init__()
+        self.setLayout(QVBoxLayout())
+        self.setTitle("Внешний ключ")
+        self.layout().addWidget(QLabel("Таблица:"))
+        self.layout().addWidget(QLabel(str(table_name)))
+        self.layout().addWidget(QLabel("Столбец:"))
+        self.layout().addWidget(QLabel(str(column_name)))
+        
 
 
 
@@ -157,12 +169,15 @@ class Generator():
         # Переменные
         self.main:QMainWindow = main
         self.alch_table:Table = None
+        self.sql = main.sqlm
         self.lw_columns:QListWidget = main.lw_columns
+        self.lw_fk_values:QListWidget = main.lw_fk_values
         self.sw_generator:QStackedWidget = main.sw_generator
         self.gb_parametres:QGroupBox = main.gb_parametres
         self.te_values:QTextEdit = main.te_values
         self.lw_generators:QListWidget = main.lw_generators
         self.lo_for_generator:QLayout = main.lo_for_generator
+        self.lo_for_fks:QVBoxLayout = main.lo_for_fks
         self.lbl_own_values_count:QLabel = main.lbl_own_values_count
         self.lbl_datatype_warning:QLabel = main.lbl_datatype_warning
         self.lbl_datatype:QLabel = main.lbl_datatype
@@ -253,6 +268,8 @@ class Generator():
 
         for r in range(self.lw_columns.count()):
             if self.alch_table.columns[self.lw_columns.item(r).text()].autoincrement == True:
+                self.lw_columns.item(r).setBackground(QColor(140,255,153))  
+            elif self.alch_table.columns[self.lw_columns.item(r).text()].foreign_keys:
                 self.lw_columns.item(r).setBackground(QColor(140,255,153))
 
         gens = read_dbg()
@@ -290,15 +307,30 @@ class Generator():
                     self.tw_preview.item(row, c_idx).setText("a_i")
                     self.tw_preview.item(row, c_idx).setBackground(QColor(140,255,153))
             elif self.alch_table.columns[labe].foreign_keys:
-                for row in range(self.tw_preview.rowCount()):
-                    self.tw_preview.setItem(row, c_idx, QTableWidgetItem())
-                    self.tw_preview.item(row, c_idx).setText("f_k")
-                    self.tw_preview.item(row, c_idx).setBackground(QColor(140,255,153))
+                b = borrow(self.alch_table.columns[labe].foreign_keys, self.sql)
+                vals = b.generate_random(self.tw_preview.rowCount())
+                for r_idx, fk_item in enumerate(vals):
+                    self.tw_preview.setItem(r_idx, c_idx, QTableWidgetItem(str(fk_item)))
+                    self.tw_preview.item(r_idx, c_idx).setBackground(QColor(140,255,153))
             else:
                 for row in range(self.tw_preview.rowCount()):
                     self.tw_preview.setItem(row, c_idx, QTableWidgetItem())
                     self.tw_preview.item(row, c_idx).setBackground(QColor(255,107,129))
                 
+
+    def InitForeignKeys(self, foreign_keys):
+        b = borrow(foreign_keys, self.sql)
+        values = b.get_all_values()
+        self.lw_fk_values.clear()
+        for val in values:
+            self.lw_fk_values.addItem(QListWidgetItem(str(val)))
+        for c in reversed(range(self.lo_for_fks.count())):
+            widgetToRemove = self.lo_for_fks.itemAt(c).widget()
+            self.lo_for_fks.removeWidget(widgetToRemove)
+            widgetToRemove.setParent(None)
+        for fk in foreign_keys:
+            self.lo_for_fks.addWidget(gb_for_keys(fk.column.table, fk.column.name))
+        
 
 
 
@@ -310,6 +342,9 @@ class Generator():
         self.selected_column = item.text()
         if self.alch_table.columns[item.text()].autoincrement == True:
             self.sw_generator.setCurrentIndex(0)
+        elif self.alch_table.columns[item.text()].foreign_keys:
+            self.sw_generator.setCurrentIndex(3)
+            self.InitForeignKeys(self.alch_table.columns[item.text()].foreign_keys)
         else:
             self.sw_generator.setCurrentIndex(1)
             self.InitLwGenerators(str(self.selected_datatype))
@@ -418,7 +453,7 @@ class Generator():
 
     # привязывается к кнопке ввода значений из другого отношения и отправляет к соответствующему виджету
     def set_other_var(self):
-        self.sw_generator.setCurrentIndex(3)
+        notice = QMessageBox.information(self.main, "Установка значений из другого столбца", "Данный модуль поможет вам сгенерировать значения на основе параметров внешнего ключа. Чтобы этот модуль работал достаточно лишь установить соответствующие ограничения в вашей базе и приложение распознает его автоматически")
 
     # привязывается к кнопке возврата к списку генераторов и отправляет к главному виджету
     def get_back(self):
@@ -448,7 +483,13 @@ def main():
     # obj:QWidget = read_dbg()["mydatabase"]["книги_редакторы"]["код_редактора"]
     # print(obj.windowTitle())
 
-    df = FIO()
+   
+
+
+
+
+
+
 
     
 if __name__ == '__main__':
